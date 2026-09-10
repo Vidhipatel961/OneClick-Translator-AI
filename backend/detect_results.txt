@@ -1,0 +1,6 @@
+STT: en | Text: Mera UNO | Detected: it
+STT: es | Text: me da uno | Detected: it
+STT: hi | Text: मेरा यूनो | Detected: hi
+STT: de | Text: Milano | Detected: en
+STT: fr | Text: mets la Uno | Detected: es
+STT: gu | Text: મેડમ | Detected: gu
