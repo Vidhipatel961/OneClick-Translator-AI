@@ -19,18 +19,19 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table('files', schema=None) as batch_op:
-        batch_op.alter_column('project_id',
-               existing_type=sa.UUID(),
-               nullable=True)
+    pass
+    # with op.batch_alter_table('files', schema=None) as batch_op:
+    #     batch_op.alter_column('project_id',
+    #            existing_type=sa.UUID(),
+    #            nullable=True)
 
-    with op.batch_alter_table('projects', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('description', sa.Text(), nullable=True))
+    # with op.batch_alter_table('projects', schema=None) as batch_op:
+    #     batch_op.add_column(sa.Column('description', sa.Text(), nullable=True))
 
-    with op.batch_alter_table('translation_jobs', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('project_id', sa.UUID(), nullable=True))
-        batch_op.create_index(batch_op.f('ix_translation_jobs_project_id'), ['project_id'], unique=False)
-        batch_op.create_foreign_key('fk_translation_jobs_projects', 'projects', ['project_id'], ['id'])
+    # with op.batch_alter_table('translation_jobs', schema=None) as batch_op:
+    #     batch_op.add_column(sa.Column('project_id', sa.UUID(), nullable=True))
+    #     batch_op.create_index(batch_op.f('ix_translation_jobs_project_id'), ['project_id'], unique=False)
+    #     batch_op.create_foreign_key('fk_translation_jobs_projects', 'projects', ['project_id'], ['id'])
 
 
 def downgrade() -> None:

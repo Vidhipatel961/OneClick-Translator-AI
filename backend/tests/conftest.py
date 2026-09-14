@@ -6,7 +6,8 @@ from sqlalchemy.pool import StaticPool
 import uuid
 
 from app.main import app
-from app.database.session import Base, get_db
+from app.database.session import get_db
+from app.models.base import BaseModel as Base
 from app.api.deps import get_current_user
 from app.models.domain import User, Project, File, TranslationJob, TranslationResult, AIConversation, AIMessage, Glossary, GlossaryTerm, UsageRecord, Plan, Subscription, Payment, Invoice
 
@@ -38,7 +39,7 @@ def client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
     
-    with TestClient(app) as c:
+    with TestClient(app, base_url="http://localhost") as c:
         yield c
 
 @pytest.fixture(scope="function")

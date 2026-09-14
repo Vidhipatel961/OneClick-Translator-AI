@@ -3,13 +3,14 @@ import uuid
 import os
 from app.core.celery_app import celery_app
 from app.database.session import SessionLocal
-from app.models.domain import TranslationJob, JobStatus, TranslationResult, File as FileModel
+from app.models.domain import TranslationJob, JobStatus, TranslationResult, File as FileModel, User
 from app.services.speech import SpeechToTextService
 from app.services.translation import TranslationService
 from app.services.tts import TextToSpeechService
 from app.services.video_service import VideoService
 from app.services.subtitle_service import SubtitleService
 from app.services.memory_service import save_translation_memory
+from app.services.email_service import EmailService
 from app.core.logging import logger
 import traceback
 
@@ -195,9 +196,21 @@ async def run_video_pipeline_async(job_id: uuid.UUID, file_id: uuid.UUID, source
         # 8. Auto-save translation memory
         save_translation_memory(db, job_id, stt_result.transcript, translated_text)
         
+        # 9. Send Email Notification
+        user = db.query(User).filter(User.id == user_id).first()
+        if user and user.email:
+            EmailService().send_job_completed(user.email, str(job_id), db_file.filename)
+        
     except Exception as e:
         logger.error(f"Video Job {job_id} failed: {traceback.format_exc()}")
         _update_job_state(job_id, JobStatus.FAILED, 0, str(e))
+        db_job = db.query(TranslationJob).filter(TranslationJob.id == job_id).first()
+        if db_job and db_job.user_id:
+            user = db.query(User).filter(User.id == db_job.user_id).first()
+            if user and user.email:
+                db_file = db.query(FileModel).filter(FileModel.id == file_id).first()
+                filename = db_file.filename if db_file else "Unknown file"
+                EmailService().send_job_failed(user.email, str(job_id), filename, str(e))
         raise
     finally:
         if voice_id and voice_id != "clone":

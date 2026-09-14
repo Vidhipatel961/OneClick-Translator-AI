@@ -15,6 +15,7 @@ from app.services.tts import TextToSpeechService
 from app.services.file_service import FileStorageService
 from app.services.memory_service import save_translation_memory
 from app.core.logging import logger
+from app.services.email_service import EmailService
 import traceback
 
 translation_service = TranslationService()

@@ -8,6 +8,7 @@ class TextTranslationRequest(BaseModel):
     target_language: str = Field(..., min_length=2, max_length=10)
     glossary_id: uuid.UUID | None = None
     project_id: uuid.UUID | None = None
+    team_id: uuid.UUID | None = None
 
 class TextTranslationResponse(BaseModel):
     source_language: str

@@ -69,11 +69,24 @@ export default function Translator() {
   const [selectedGlossaryId, setSelectedGlossaryId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const [teams, setTeams] = useState<any[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGlossaries();
     fetchProjects();
+    fetchTeams();
   }, []);
+
+  const fetchTeams = async () => {
+    const token = localStorage.getItem('token');
+    const res = await fetch('http://localhost:8000/api/teams', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (res.ok) {
+      setTeams(await res.json());
+    }
+  };
 
   const fetchGlossaries = async () => {
     const token = localStorage.getItem('token');
@@ -405,7 +418,8 @@ export default function Translator() {
             source_language: sourceLang,
             target_language: targetLang,
             glossary_id: selectedGlossaryId,
-            project_id: selectedProjectId || undefined
+            project_id: selectedProjectId || undefined,
+            team_id: selectedTeamId || undefined
           })
         });
 
@@ -431,7 +445,7 @@ export default function Translator() {
         const jobRes = await fetch(`http://localhost:8000${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ file_id: fileId, source_language: sourceLang, target_language: targetLang, glossary_id: selectedGlossaryId, project_id: selectedProjectId || undefined })
+          body: JSON.stringify({ file_id: fileId, source_language: sourceLang, target_language: targetLang, glossary_id: selectedGlossaryId, project_id: selectedProjectId || undefined, team_id: selectedTeamId || undefined })
         });
         if (!jobRes.ok) {
           const errData = await jobRes.json().catch(() => null);
@@ -697,6 +711,24 @@ export default function Translator() {
                 <option value="">No Project</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex-1 w-full sm:w-1/4">
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1 block px-1 flex justify-between">
+              <span>Workspace</span>
+            </label>
+            <div className="relative">
+              <select 
+                value={selectedTeamId || ''}
+                onChange={(e) => setSelectedTeamId(e.target.value || null)}
+                className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-3 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Personal Workspace</option>
+                {teams.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} (Team)</option>
                 ))}
               </select>
             </div>

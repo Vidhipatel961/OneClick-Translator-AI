@@ -9,6 +9,7 @@ const Translator = lazy(() => import('./pages/Translator'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Glossaries = lazy(() => import('./pages/Glossaries'));
+const Teams = lazy(() => import('./pages/Teams'));
 const History = lazy(() => import('./pages/History'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Projects = lazy(() => import('./pages/Projects'));
@@ -42,7 +43,8 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
-            <Route path="/memory" element={<TranslationMemory />} />
+            <Route path="/memory" element={<ProtectedRoute><TranslationMemory /></ProtectedRoute>} />
+            <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
             <Route path="/assistant" element={<Assistant />} />
             <Route path="/settings" element={<Placeholder title="Settings" />} />
           </Route>

@@ -32,14 +32,35 @@ class User(BaseModel):
     projects: Mapped[List["Project"]] = relationship(back_populates="user")
     translation_jobs: Mapped[List["TranslationJob"]] = relationship(back_populates="user")
     usage: Mapped["UsageRecord"] = relationship(back_populates="user", uselist=False)
+    team_memberships: Mapped[List["TeamMember"]] = relationship(back_populates="user")
+
+class Team(BaseModel):
+    __tablename__ = "teams"
+    name: Mapped[str] = mapped_column(String(255))
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    
+    owner: Mapped["User"] = relationship(foreign_keys=[owner_id])
+    members: Mapped[List["TeamMember"]] = relationship(back_populates="team", cascade="all, delete-orphan")
+    projects: Mapped[List["Project"]] = relationship(back_populates="team")
+
+class TeamMember(BaseModel):
+    __tablename__ = "team_members"
+    team_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("teams.id"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    role: Mapped[str] = mapped_column(String(50), default="VIEWER") # ADMIN, EDITOR, VIEWER
+    
+    team: Mapped["Team"] = relationship(back_populates="members")
+    user: Mapped["User"] = relationship(back_populates="team_memberships")
 
 class Project(BaseModel):
     __tablename__ = "projects"
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    team_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("teams.id"), nullable=True)
     
     user: Mapped["User"] = relationship(back_populates="projects")
+    team: Mapped[Optional["Team"]] = relationship(back_populates="projects")
     files: Mapped[List["File"]] = relationship(back_populates="project")
     translation_jobs: Mapped[List["TranslationJob"]] = relationship(back_populates="project")
     translation_memories: Mapped[List["TranslationMemory"]] = relationship(back_populates="project")
@@ -50,8 +71,10 @@ class File(BaseModel):
     file_type: Mapped[str] = mapped_column(String(255))
     storage_path: Mapped[str] = mapped_column(String(512))
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("projects.id"), nullable=True, index=True)
+    team_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
     
     project: Mapped[Optional["Project"]] = relationship(back_populates="files")
+    team: Mapped[Optional["Team"]] = relationship()
     translation_jobs: Mapped[List["TranslationJob"]] = relationship(back_populates="file")
 
 class Language(BaseModel):
@@ -62,6 +85,7 @@ class Language(BaseModel):
 class TranslationJob(BaseModel):
     __tablename__ = "translation_jobs"
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    team_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("projects.id"), nullable=True, index=True)
     file_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("files.id"), nullable=True, index=True)
     source_language: Mapped[str] = mapped_column(String(10))
@@ -72,6 +96,7 @@ class TranslationJob(BaseModel):
     completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
     
     user: Mapped["User"] = relationship(back_populates="translation_jobs")
+    team: Mapped[Optional["Team"]] = relationship()
     project: Mapped[Optional["Project"]] = relationship(back_populates="translation_jobs")
     file: Mapped[Optional["File"]] = relationship(back_populates="translation_jobs")
     result: Mapped[Optional["TranslationResult"]] = relationship(back_populates="job")
@@ -111,10 +136,12 @@ class AIMessage(BaseModel):
 class Glossary(BaseModel):
     __tablename__ = "glossaries"
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    team_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     user: Mapped["User"] = relationship()
+    team: Mapped[Optional["Team"]] = relationship()
     terms: Mapped[list["GlossaryTerm"]] = relationship(back_populates="glossary", cascade="all, delete-orphan")
 
 class GlossaryTerm(BaseModel):
@@ -177,6 +204,7 @@ class Invoice(BaseModel):
 class TranslationMemory(BaseModel):
     __tablename__ = "translation_memories"
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    team_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("teams.id"), nullable=True, index=True)
     project_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("projects.id"), nullable=True, index=True)
     source_language: Mapped[str] = mapped_column(String(10), index=True)
     target_language: Mapped[str] = mapped_column(String(10), index=True)
@@ -184,4 +212,5 @@ class TranslationMemory(BaseModel):
     target_text: Mapped[str] = mapped_column(Text)
     
     user: Mapped["User"] = relationship()
+    team: Mapped[Optional["Team"]] = relationship()
     project: Mapped[Optional["Project"]] = relationship(back_populates="translation_memories")

@@ -10,6 +10,7 @@ class JobCreateRequest(BaseModel):
     target_language: str
     glossary_id: Optional[uuid.UUID] = None
     project_id: Optional[uuid.UUID] = None
+    team_id: Optional[uuid.UUID] = None
 
 class JobResponse(BaseModel):
     id: uuid.UUID

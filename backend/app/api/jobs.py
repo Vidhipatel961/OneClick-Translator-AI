@@ -67,7 +67,8 @@ async def create_audio_translation_job(
         target_language=request.target_language,
         status=JobStatus.PENDING,
         progress=0,
-        project_id=request.project_id
+        project_id=request.project_id,
+        team_id=request.team_id
     )
     db.add(job)
     db.commit()
@@ -143,7 +144,8 @@ async def create_video_translation_job(
         target_language=request.target_language,
         status=JobStatus.PENDING,
         progress=0,
-        project_id=request.project_id
+        project_id=request.project_id,
+        team_id=request.team_id
     )
     db.add(job)
     db.commit()
@@ -218,7 +220,8 @@ async def create_document_translation_job(
         target_language=request.target_language,
         status=JobStatus.PENDING,
         progress=0,
-        project_id=request.project_id
+        project_id=request.project_id,
+        team_id=request.team_id
     )
     db.add(job)
     db.commit()

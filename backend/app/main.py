@@ -4,7 +4,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.exceptions import add_exception_handlers
-from app.api import health, auth, translate, languages, files, speech, jobs, assistant, glossaries, dashboard, usage, subscriptions, projects, memory
+from app.api import health, auth, translate, languages, files, speech, jobs, assistant, glossaries, dashboard, usage, subscriptions, projects, memory, teams
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
@@ -56,6 +56,7 @@ app.include_router(usage.router, prefix="/api/usage", tags=["usage"])
 app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["subscriptions"])
 app.include_router(projects.router, prefix="/api/projects", tags=["projects"])
 app.include_router(memory.router, prefix="/api/memory", tags=["memory"])
+app.include_router(teams.router, prefix="/api/teams", tags=["teams"])
 
 @app.on_event("startup")
 async def startup_event():
