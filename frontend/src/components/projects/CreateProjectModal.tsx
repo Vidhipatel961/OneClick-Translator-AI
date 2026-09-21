@@ -48,10 +48,10 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between p-4 border-b border-slate-800">
-          <h3 className="text-lg font-bold text-white">Create New Project</h3>
-          <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+      <div className="bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="text-lg font-bold text-text-main">Create New Project</h3>
+          <button onClick={onClose} className="p-1 rounded-lg text-text-muted hover:text-text-main hover:bg-surface-hover transition">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -65,7 +65,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
           
           <div className="space-y-4">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-1">
+              <label htmlFor="name" className="block text-sm font-medium text-text-main mb-1">
                 Project Name <span className="text-red-400">*</span>
               </label>
               <input
@@ -73,7 +73,7 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text-main placeholder:text-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition"
                 placeholder="e.g. Q4 Marketing Video"
                 disabled={isSubmitting}
                 autoFocus
@@ -81,15 +81,15 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
             </div>
             
             <div>
-              <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-1">
-                Description <span className="text-slate-500">(Optional)</span>
+              <label htmlFor="description" className="block text-sm font-medium text-text-main mb-1">
+                Description <span className="text-text-disabled">(Optional)</span>
               </label>
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition resize-none"
+                className="w-full bg-background border border-border rounded-xl px-4 py-2.5 text-text-main placeholder:text-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition resize-none"
                 placeholder="Briefly describe this project..."
                 disabled={isSubmitting}
               />
@@ -101,14 +101,14 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition"
+              className="px-4 py-2 text-sm font-medium text-text-main hover:text-text-main bg-surface-hover hover:bg-surface-hover rounded-xl transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#04110F] bg-primary hover:bg-primary rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Create Project
@@ -119,3 +119,4 @@ export default function CreateProjectModal({ isOpen, onClose, onSuccess }: Creat
     </div>
   );
 }
+

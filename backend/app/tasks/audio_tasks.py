@@ -40,6 +40,41 @@ async def run_audio_pipeline_async(job_id: uuid.UUID, file_id: uuid.UUID, source
         _update_job_state(job_id, JobStatus.TRANSLATING, 40)
         translated_text, trans_source = await translation_service.translate_text(stt_result.transcript, source_lang, target_lang, glossary_id_str, user_id=user_id, db=db)
         
+        # 2b. Translate Segments for Subtitles
+        from app.services.subtitle_service import SubtitleService
+        subtitle_service = SubtitleService()
+        processed_segments = []
+        last_end = 0.0
+        stt_segments = getattr(stt_result, "segments", [])
+        if not stt_segments:
+            stt_segments = [{"start": 0.0, "end": max(5.0, getattr(stt_result, "duration", 5.0)), "text": stt_result.transcript}]
+            
+        for seg in stt_segments:
+            start_val = seg.start if hasattr(seg, 'start') else seg.get("start")
+            end_val = seg.end if hasattr(seg, 'end') else seg.get("end")
+            text_val = seg.text if hasattr(seg, 'text') else seg.get("text", "")
+            
+            start_time = float(start_val) if start_val is not None else last_end
+            end_time = float(end_val) if end_val is not None else (start_time + 2.0)
+            start_time = max(0.0, start_time)
+            end_time = max(start_time + 0.1, end_time)
+            if start_time < last_end:
+                start_time = last_end
+                if end_time <= start_time:
+                    end_time = start_time + 0.1
+                    
+            seg_translated, _ = await translation_service.translate_text(text_val, source_lang, target_lang, glossary_id_str, user_id=user_id, db=db)
+            
+            processed_segments.append({
+                "start": start_time,
+                "end": end_time,
+                "duration": end_time - start_time,
+                "text": seg_translated
+            })
+            last_end = end_time
+
+        srt_path, vtt_path = subtitle_service.save_subtitles(processed_segments)
+
         # 3. TTS
         _update_job_state(job_id, JobStatus.GENERATING_AUDIO, 70)
         tts_result = await tts_service.synthesize_speech(translated_text, target_lang, "default", db, user_id)
@@ -48,14 +83,14 @@ async def run_audio_pipeline_async(job_id: uuid.UUID, file_id: uuid.UUID, source
         _update_job_state(job_id, JobStatus.COMPLETED, 100)
         job = db.query(TranslationJob).filter(TranslationJob.id == job_id).first()
         if job:
-            # We don't have a structured way to store all 3 fields in TranslationResult directly.
-            # We can store the final audio URL in result_file_path and translated text in result_text
             res = TranslationResult(
                 job_id=job.id,
                 original_transcript=stt_result.transcript,
                 result_text=translated_text,
                 result_file_path=tts_result.audio_url,
-                translation_source=trans_source
+                translation_source=trans_source,
+                subtitles_srt_path=srt_path,
+                subtitles_vtt_path=vtt_path
             )
             db.add(res)
             db.commit()

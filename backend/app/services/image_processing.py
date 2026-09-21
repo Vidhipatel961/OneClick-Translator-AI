@@ -76,15 +76,33 @@ class ImageProcessor:
 
     # ──────────────────────────────────────────────────────────────────────────
     @staticmethod
-    def _get_font(size: int):
+    def _get_font(size: int, text: str = ""):
         from PIL import ImageFont
+        
+        gujarati_font_path = None
+        regular_font_path = None
+        
+        for path in FONT_CANDIDATES:
+            if os.path.exists(path):
+                if "Gujarati" in path:
+                    gujarati_font_path = path
+                elif "NotoSans-Regular" in path or "arial" in path.lower():
+                    regular_font_path = path
 
-        if _RESOLVED_FONT_PATH:
+        # Check if text contains Gujarati characters
+        has_gujarati = any(0x0A80 <= ord(c) <= 0x0AFF for c in text) if text else False
+        
+        target_path = gujarati_font_path if has_gujarati and gujarati_font_path else regular_font_path
+        
+        if not target_path:
+            # Fallback to whatever exists
+            target_path = next((p for p in FONT_CANDIDATES if os.path.exists(p)), None)
+
+        if target_path:
             try:
-                return ImageFont.truetype(_RESOLVED_FONT_PATH, size)
+                return ImageFont.truetype(target_path, size)
             except Exception:
                 pass
-        # Absolute last resort — monochrome bitmap, no Unicode
         return ImageFont.load_default()
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -121,12 +139,12 @@ class ImageProcessor:
             min_size = 8
             max_size = max(min_size, int(box_h * 0.85))
 
-            best_font = ImageProcessor._get_font(min_size)
+            best_font = ImageProcessor._get_font(min_size, trans_text)
             best_wrapped = trans_text
 
             # Find the largest font that still fits inside the bounding box
             for size in range(max_size, min_size - 1, -1):
-                font = ImageProcessor._get_font(size)
+                font = ImageProcessor._get_font(size, trans_text)
 
                 try:
                     char_w = max(font.getlength("A"), 1)
@@ -149,7 +167,7 @@ class ImageProcessor:
                     break
             else:
                 # Use minimum size with tightest wrap
-                font = ImageProcessor._get_font(min_size)
+                font = ImageProcessor._get_font(min_size, trans_text)
                 try:
                     char_w = max(font.getlength("A"), 1)
                 except Exception:

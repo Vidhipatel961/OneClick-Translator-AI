@@ -13,6 +13,9 @@ def save_translation_memory_direct(db: Session, user_id: uuid.UUID, source_lang:
     if not source_text or not target_text:
         return
         
+    if target_text.startswith("[RATE-LIMITED"):
+        return
+        
     try:
         # Avoid exact duplicate entries
         existing = db.query(TranslationMemory).filter(
