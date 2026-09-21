@@ -104,35 +104,21 @@ async def run_document_pipeline_async(job_id: uuid.UUID, file_id: uuid.UUID, sou
         # 4. Generate TTS Audio for the translated text
         _update_job_state(job_id, JobStatus.GENERATING_AUDIO, 90)
         tts_service = TextToSpeechService()
-        file_service = FileStorageService()
-        
-        final_text = "\n\n".join(translated_chunks)
-        try:
-            # We use 'default' voice, mapping is handled inside provider
-            audio_bytes = await tts_service.provider.synthesize(final_text, target_lang, "default")
-            
-            class MockUploadFile:
-                def __init__(self, filename, file_obj, content_type):
-                    self.filename = filename
-                    self.content_type = content_type
-                    self.file = file_obj
-
-            mock_file = MockUploadFile(
-                filename=f"translated_audio_{target_lang}.mp3",
-                file_obj=io.BytesIO(audio_bytes),
-                content_type="audio/mpeg"
-            )
-            
-            # Save audio file to DB
-            upload_response = await file_service.upload_audio_file(
-                file=mock_file,
-                db=db,
-                user_id=user_id
-            )
-            audio_url = f"/api/files/{upload_response.file_id}/download"
-        except Exception as e:
-            logger.warning(f"Background TTS generation failed: {e}")
-            audio_url = None
+        final_text = "\n\n".join([c for c in translated_chunks if c and c.strip()])
+        audio_url = None
+        if final_text.strip():
+            try:
+                tts_res = await tts_service.synthesize_speech(
+                    text=final_text,
+                    language=target_lang,
+                    voice="default",
+                    db=db,
+                    user_id=user_id
+                )
+                audio_url = tts_res.audio_url
+            except Exception as e:
+                logger.warning(f"Background TTS generation failed: {e}")
+                audio_url = None
 
         # 5. Complete
         _update_job_state(job_id, JobStatus.COMPLETED, 100)

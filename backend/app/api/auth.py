@@ -41,3 +41,21 @@ def login(user_in: UserLogin, db: Session = Depends(get_db)) -> Any:
 def read_current_user(current_user: User = Depends(get_current_user)) -> Any:
     """Get current user information."""
     return current_user
+
+from pydantic import BaseModel
+import uuid
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+@router.post("/forgot-password")
+def forgot_password(req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == req.email).first()
+    
+    token = str(uuid.uuid4())
+    reset_link = f"http://localhost:5173/reset-password?token={token}"
+    
+    return {
+        "message": "Reset link generated.", 
+        "dev_reset_link": reset_link
+    }

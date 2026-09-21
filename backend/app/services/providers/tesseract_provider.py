@@ -45,34 +45,81 @@ class TesseractOCRProvider(OCRProvider):
         "ar": "ara"
     }
 
+    def _extract_rapid_ocr(self, image: Image.Image) -> OCRResult:
+        """Run RapidOCR on image, returning line-level bounding boxes and full text."""
+        from rapidocr_onnxruntime import RapidOCR
+        import numpy as np
+
+        engine = RapidOCR()
+        img_np = np.array(image.convert("RGB"))
+        result, _ = engine(img_np)
+
+        if not result:
+            return OCRResult(full_text="", regions=[])
+
+        regions = []
+        lines = []
+        for item in result:
+            box, text, score = item
+            text_str = str(text).strip()
+            if not text_str:
+                continue
+
+            left = int(min(p[0] for p in box))
+            top = int(min(p[1] for p in box))
+            width = max(1, int(max(p[0] for p in box) - left))
+            height = max(1, int(max(p[1] for p in box) - top))
+
+            try:
+                conf = float(score)
+            except (ValueError, TypeError):
+                conf = 0.0
+
+            regions.append(OCRRegion(
+                text=text_str,
+                left=left,
+                top=top,
+                width=width,
+                height=height,
+                confidence=conf
+            ))
+            lines.append(text_str)
+
+        return OCRResult(full_text="\n".join(lines), regions=regions)
+
     def extract_text(self, image: Any, lang: str = "en") -> OCRResult:
         if not isinstance(image, Image.Image):
             raise BaseLingoraException("Unsupported image format. Expected PIL Image.")
-            
+
+        # 1. Primary: RapidOCR (in-process ONNX model, line-level bounding boxes, no external .exe)
+        try:
+            res = self._extract_rapid_ocr(image)
+            if res.regions:
+                return res
+        except Exception as e:
+            logger.warning(f"RapidOCR extraction failed, falling back to Tesseract: {e}")
+
+        # 2. Secondary fallback: pytesseract
         try:
             if lang == "auto":
-                # Find all downloaded language packs to use them simultaneously
                 available_langs = []
                 if os.path.exists(local_tessdata):
                     for file in os.listdir(local_tessdata):
                         if file.endswith(".traineddata") and not file.startswith("osd"):
                             available_langs.append(file.split(".")[0])
-                
                 tess_lang = "+".join(available_langs) if available_langs else "eng"
             else:
                 tess_lang = self.TESSERACT_LANG_MAP.get(lang, "eng")
-            # Extract structured data using pytesseract
+
             data = pytesseract.image_to_data(image, lang=tess_lang, output_type=pytesseract.Output.DICT)
-            
+
             regions = []
             words = []
-            
             n_boxes = len(data['level'])
             for i in range(n_boxes):
                 text = data['text'][i].strip()
                 if text:
                     words.append(text)
-                    # Tesseract conf can be a string like '-1' or a float
                     try:
                         conf = float(data['conf'][i])
                     except (ValueError, TypeError):
@@ -86,16 +133,13 @@ class TesseractOCRProvider(OCRProvider):
                         height=data['height'][i],
                         confidence=conf
                     ))
-                    
-            # Fallback to full extraction if structured data misses some formatting (optional)
-            # but joining words gives a reasonable full text output.
+
             full_text = " ".join(words)
-            
             return OCRResult(full_text=full_text, regions=regions)
-            
+
         except pytesseract.TesseractNotFoundError:
-            logger.error("Tesseract is not installed or not in PATH.")
-            raise BaseLingoraException("OCR engine is not installed on this system.")
+            logger.error("Neither RapidOCR nor Tesseract could process the image.")
+            raise BaseLingoraException("OCR engine is not available on this system.")
         except Exception as e:
-            logger.error(f"Tesseract OCR extraction failed: {str(e)}")
+            logger.error(f"OCR extraction failed: {str(e)}")
             raise BaseLingoraException(f"Failed to process image OCR: {str(e)}")

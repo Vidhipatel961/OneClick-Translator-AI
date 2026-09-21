@@ -28,7 +28,7 @@ class TranslationService:
                 TranslationMemory.source_text == normalized_text
             ).first()
             
-            if memory_match:
+            if memory_match and not memory_match.target_text.startswith(("[ERROR:", "[RATE-LIMITED", "Error ")):
                 logger.info(f"TranslationService: Memory hit for user {user_id}")
                 return memory_match.target_text, "Reused from Translation Memory"
 

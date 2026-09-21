@@ -252,10 +252,18 @@ async def create_document_translation_job(
 
         def _run_pipeline():
             import asyncio
-            from app.tasks.document_tasks import run_document_pipeline_async
-            asyncio.run(run_document_pipeline_async(
-                _job_id, _file_id, _src, _tgt, _uid, _gid
-            ))
+            from app.tasks.document_tasks import run_document_pipeline_async, _update_job_state
+            try:
+                asyncio.run(run_document_pipeline_async(
+                    _job_id, _file_id, _src, _tgt, _uid, _gid
+                ))
+            except Exception as thread_err:
+                import logging
+                logging.error(f"Background pipeline execution failed for job {_job_id}: {thread_err}", exc_info=True)
+                try:
+                    _update_job_state(_job_id, JobStatus.FAILED, 0, str(thread_err))
+                except Exception:
+                    pass
 
         threading.Thread(target=_run_pipeline, daemon=True).start()
 

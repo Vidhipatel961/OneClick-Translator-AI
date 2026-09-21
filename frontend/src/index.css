@@ -1,19 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --color-secondary: #8b5cf6;
+  --color-background: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+  --color-text-disabled: var(--text-disabled);
+  
+  --color-border: var(--border-color);
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
 }
 
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Premium Midnight Theme */
+  --bg: #04110F;
+  --surface: #091E1A;
+  --surface-hover: #102D27;
+  
+  --primary: #00F0FF;
+  --primary-dark: #00D0DD;
+  --secondary: #21D6B2;
+  --secondary-dark: #12BFA0;
+  --accent: #F2E66D;
+  
+  --text-main: #F5FFF8;
+  --text-muted: #8CA49C;
+  --text-disabled: #61766F;
+  
+  --border-color: rgba(190, 255, 100, 0.12);
+  
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #0f172a;
+  color-scheme: dark;
+  color: var(--text-main);
+  background-color: var(--bg);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -25,4 +55,100 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text-main);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(33, 214, 178, 0.05), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(207, 255, 74, 0.05), transparent 25%);
+}
+
+/* Base custom utilities for glassmorphism */
+.glass {
+  background: rgba(9, 30, 26, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+}
+
+.glass-panel {
+  background: linear-gradient(145deg, rgba(9, 30, 26, 0.8) 0%, rgba(4, 17, 15, 0.9) 100%);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+/* Scrollbar (Hidden globally per user request) */
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+* {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Explicitly show scrollbar when requested */
+.show-scrollbar::-webkit-scrollbar {
+  display: block;
+  width: 8px;
+  height: 8px;
+}
+.show-scrollbar::-webkit-scrollbar-track {
+  background: var(--bg); 
+}
+.show-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--surface-hover); 
+  border-radius: 4px;
+}
+.show-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-disabled); 
+}
+.show-scrollbar {
+  -ms-overflow-style: auto;  /* IE and Edge */
+  scrollbar-width: auto;  /* Firefox */
+}
+
+@keyframes sweep {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(200%) skewX(-20deg); }
+}
+
+
+/* Auth Card Slider Animations */
+
+
+@media (max-width: 768px) {
+              }
+[data-theme="light"] {
+  --bg: #FFFFFF;
+  --surface: #F3F4F6;
+  --surface-hover: #E5E7EB;
+  
+  --text-main: #111827;
+  --text-muted: #4B5563;
+  --text-disabled: #9CA3AF;
+  
+  --border-color: rgba(0, 0, 0, 0.1);
+  color-scheme: light;
 }

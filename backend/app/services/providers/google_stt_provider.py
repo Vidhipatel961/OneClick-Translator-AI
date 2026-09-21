@@ -209,52 +209,80 @@ class GoogleSTTProvider(SpeechToTextProvider):
         segments: list[TranscriptionSegment] = []
         all_text: list[str] = []
 
+        import concurrent.futures
+        from dataclasses import dataclass
+
+        @dataclass
+        class ChunkTask:
+            index: int
+            start: float
+            dur: float
+            path: str
+            text: str = ""
+
         with tempfile.TemporaryDirectory() as tmp_dir:
             chunk_start = 0.0
             chunk_index = 0
+            tasks = []
 
             while chunk_start < duration:
                 chunk_dur = min(_CHUNK_SECONDS, duration - chunk_start)
                 chunk_path = os.path.join(tmp_dir, f"chunk_{chunk_index:04d}.flac")
-
-                logger.info(
-                    f"GoogleSTTProvider: chunk {chunk_index} "
-                    f"[{chunk_start:.1f}s – {chunk_start + chunk_dur:.1f}s]"
-                )
-
-                ok = _convert_chunk_to_flac(
-                    file_path, chunk_start, chunk_dur, chunk_path, ffmpeg
-                )
-                if not ok:
-                    logger.warning(f"ffmpeg conversion failed for chunk {chunk_index}")
-                    chunk_start += _CHUNK_SECONDS
-                    chunk_index += 1
-                    continue
-
-                text = _transcribe_flac_chunk(chunk_path, lang_bcp47)
-
-                if text:
-                    all_text.append(text)
-                    segments.append(
-                        TranscriptionSegment(
-                            start=chunk_start,
-                            end=chunk_start + chunk_dur,
-                            text=text,
-                        )
-                    )
-                    logger.info(
-                        f"GoogleSTTProvider: chunk {chunk_index} → "
-                        f"{len(text)} chars: {text[:60]}..."
-                    )
-                else:
-                    logger.info(
-                        f"GoogleSTTProvider: chunk {chunk_index} → silent/no speech"
-                    )
-
+                tasks.append(ChunkTask(chunk_index, chunk_start, chunk_dur, chunk_path))
                 chunk_start += _CHUNK_SECONDS
                 chunk_index += 1
-                # Small delay to avoid hammering the endpoint
-                time.sleep(0.3)
+
+            # Prepare audio chunks (CPU bound, so parallelize conversion)
+            def prepare_chunk(task: ChunkTask):
+                ok = _convert_chunk_to_flac(file_path, task.start, task.dur, task.path, ffmpeg)
+                return ok, task
+
+            def process_chunk(task: ChunkTask):
+                text = _transcribe_flac_chunk(task.path, lang_bcp47)
+                task.text = text
+                return task
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                # 1. Convert all chunks in parallel
+                futures_prep = [executor.submit(prepare_chunk, t) for t in tasks]
+                prepared_tasks = []
+                for f in concurrent.futures.as_completed(futures_prep):
+                    ok, t = f.result()
+                    if ok:
+                        prepared_tasks.append(t)
+                    else:
+                        logger.warning(f"ffmpeg conversion failed for chunk {t.index}")
+
+                # Sort back by index
+                prepared_tasks.sort(key=lambda t: t.index)
+
+                # 2. Transcribe all chunks in parallel
+                futures_trans = [executor.submit(process_chunk, t) for t in prepared_tasks]
+                
+                # Gather results sequentially
+                for t in prepared_tasks:
+                    text = t.text # Wait, it is populated by process_chunk but we must await future!
+                    
+            # Actually we need to wait for futures to finish and get result!
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                # Transcribe in parallel
+                future_to_task = {executor.submit(process_chunk, t): t for t in prepared_tasks}
+                for future in concurrent.futures.as_completed(future_to_task):
+                    pass # Ensure all finished
+
+            for t in prepared_tasks:
+                if t.text:
+                    all_text.append(t.text)
+                    segments.append(
+                        TranscriptionSegment(
+                            start=t.start,
+                            end=t.start + t.dur,
+                            text=t.text,
+                        )
+                    )
+                    logger.info(f"GoogleSTTProvider: chunk {t.index} -> {len(t.text)} chars")
+                else:
+                    logger.info(f"GoogleSTTProvider: chunk {t.index} -> silent/no speech")
 
         full_transcript = " ".join(all_text)
         return full_transcript, duration, segments

@@ -81,20 +81,20 @@ export default function TranslationMemory() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 font-sans flex flex-col">
-      <header className="border-b border-slate-800 bg-slate-900/50 p-4 flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+    <div className="h-full bg-background text-text-main font-sans flex flex-col">
+      <header className="border-b border-border bg-surface p-4 flex items-center justify-between z-10 backdrop-blur-md">
         <div className="flex items-center gap-4">
-          <Link to="/dashboard" className="text-slate-400 hover:text-white transition p-2 rounded-full hover:bg-slate-800">
+          <Link to="/dashboard" className="text-text-muted hover:text-text-main transition p-2 rounded-full hover:bg-surface-hover">
             <LayoutDashboard className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <Database className="w-5 h-5 text-indigo-400" />
-            <span className="font-semibold text-lg text-slate-100">Translation Memory</span>
+            <Database className="w-5 h-5 text-primary" />
+            <span className="font-semibold text-lg text-text-main">Translation Memory</span>
           </div>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-medium transition shadow-lg shadow-indigo-500/20"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-[#04110F] hover:bg-primary rounded-xl text-sm font-medium transition shadow-lg shadow-primary/20"
         >
           <Plus className="w-4 h-4" /> Add Translation
         </button>
@@ -109,28 +109,28 @@ export default function TranslationMemory() {
         )}
         
         {successMsg && (
-          <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-xl text-primary flex items-center justify-between animate-in fade-in slide-in-from-top-2">
             <span>{successMsg}</span>
             <button onClick={() => setSuccessMsg(null)} className="opacity-70 hover:opacity-100">×</button>
           </div>
         )}
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="bg-surface border border-border rounded-xl p-4 flex flex-col sm:flex-row gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-text-disabled" />
             <input 
               type="text" 
               placeholder="Search source text..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2.5 bg-slate-950 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full pl-9 pr-4 py-2.5 bg-background border border-border rounded-lg text-sm text-text-main placeholder:text-text-disabled focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
             />
           </div>
           <div className="flex gap-4">
             <select 
               value={sourceLangFilter}
               onChange={(e) => { setSourceLangFilter(e.target.value); setPage(1); }}
-              className="bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+              className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-text-main focus:outline-none focus:border-primary"
             >
               <option value="">Source Language</option>
               {languages.map(l => (
@@ -140,7 +140,7 @@ export default function TranslationMemory() {
             <select 
               value={targetLangFilter}
               onChange={(e) => { setTargetLangFilter(e.target.value); setPage(1); }}
-              className="bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+              className="bg-background border border-border rounded-lg px-4 py-2.5 text-sm text-text-main focus:outline-none focus:border-primary"
             >
               <option value="">Target Language</option>
               {languages.map(l => (
@@ -150,10 +150,10 @@ export default function TranslationMemory() {
           </div>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden flex-1 flex flex-col">
+        <div className="bg-surface border border-border rounded-xl overflow-hidden flex-1 flex flex-col">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300 min-w-[800px]">
-              <thead className="text-xs text-slate-400 uppercase bg-slate-950/50 border-b border-slate-800">
+            <table className="w-full text-left text-sm text-text-main min-w-[800px]">
+              <thead className="text-xs text-text-muted uppercase bg-background border-b border-border">
                 <tr>
                   <th className="px-6 py-4 w-1/4">Source</th>
                   <th className="px-6 py-4 w-1/4">Target</th>
@@ -167,49 +167,49 @@ export default function TranslationMemory() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center">
-                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-500 mb-2" />
-                      <p className="text-slate-400">Loading memory entries...</p>
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
+                      <p className="text-text-muted">Loading memory entries...</p>
                     </td>
                   </tr>
                 ) : memories.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-16 text-center text-text-disabled">
                       <Database className="w-12 h-12 mx-auto text-slate-700 mb-4" />
-                      <p className="text-lg text-slate-400 mb-2">No translation memory entries found.</p>
+                      <p className="text-lg text-text-muted mb-2">No translation memory entries found.</p>
                       <p className="text-sm">Entries matching your filters will appear here.</p>
                     </td>
                   </tr>
                 ) : (
                   memories.map(memory => (
-                    <tr key={memory.id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition">
+                    <tr key={memory.id} className="border-b border-border hover:bg-surface-hover transition">
                       <td className="px-6 py-4">
-                        <p className="text-slate-200 line-clamp-3">{memory.source_text}</p>
+                        <p className="text-text-main line-clamp-3">{memory.source_text}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <p className="text-slate-300 line-clamp-3">{memory.target_text}</p>
+                        <p className="text-text-main line-clamp-3">{memory.target_text}</p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <span className="uppercase font-medium text-slate-400 text-xs">{memory.source_language}</span>
-                          <ArrowLeft className="w-3 h-3 text-slate-600 rotate-180" />
-                          <span className="uppercase font-medium text-slate-400 text-xs">{memory.target_language}</span>
+                          <span className="uppercase font-medium text-text-muted text-xs">{memory.source_language}</span>
+                          <ArrowLeft className="w-3 h-3 text-text-disabled rotate-180" />
+                          <span className="uppercase font-medium text-text-muted text-xs">{memory.target_language}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">
+                      <td className="px-6 py-4 text-text-disabled text-xs">
                         {memory.project_id ? (
-                          <span className="bg-slate-800/50 px-2 py-1 rounded-md text-slate-400 border border-slate-700">Has Project</span>
+                          <span className="bg-surface-hover px-2 py-1 rounded-md text-text-muted border border-border">Has Project</span>
                         ) : (
-                          <span className="text-slate-600 italic">None</span>
+                          <span className="text-text-disabled italic">None</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">
+                      <td className="px-6 py-4 text-text-disabled text-xs">
                         {new Date(memory.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button 
                           onClick={() => handleDelete(memory.id)}
                           disabled={deletingId === memory.id}
-                          className="p-2 text-slate-400 hover:text-red-400 bg-slate-800 hover:bg-slate-700 rounded-lg transition disabled:opacity-50 inline-flex"
+                          className="p-2 text-text-muted hover:text-red-400 bg-surface-hover hover:bg-surface-hover rounded-lg transition disabled:opacity-50 inline-flex"
                           title="Delete"
                         >
                           {deletingId === memory.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -223,20 +223,20 @@ export default function TranslationMemory() {
           </div>
           
           {!isLoading && totalPages > 1 && (
-            <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-900/50 mt-auto">
-              <span className="text-sm text-slate-500">Page {page} of {totalPages}</span>
+            <div className="p-4 border-t border-border flex items-center justify-between bg-surface mt-auto">
+              <span className="text-sm text-text-disabled">Page {page} of {totalPages}</span>
               <div className="flex gap-2">
                 <button 
                   disabled={page === 1}
                   onClick={() => setPage(p => p - 1)}
-                  className="px-4 py-2 bg-slate-800 disabled:opacity-50 text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-700 transition"
+                  className="px-4 py-2 bg-surface-hover disabled:opacity-50 text-text-main rounded-lg text-sm font-medium hover:bg-surface-hover transition"
                 >
                   Previous
                 </button>
                 <button 
                   disabled={page === totalPages}
                   onClick={() => setPage(p => p + 1)}
-                  className="px-4 py-2 bg-slate-800 disabled:opacity-50 text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-700 transition"
+                  className="px-4 py-2 bg-surface-hover disabled:opacity-50 text-text-main rounded-lg text-sm font-medium hover:bg-surface-hover transition"
                 >
                   Next
                 </button>
@@ -258,3 +258,4 @@ export default function TranslationMemory() {
     </div>
   );
 }
+

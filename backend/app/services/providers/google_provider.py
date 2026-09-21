@@ -1,26 +1,13 @@
 import time
 import re
+import urllib.request
+import urllib.parse
+import json
 from deep_translator import GoogleTranslator
 from app.services.providers.base import TranslationProvider
 from app.core.logging import logger
 
-# Patterns that indicate Google returned an error page instead of a translation
-_ERROR_PATTERNS = [
-    r"Error\s+\d{3}\s*\(",
-    r"That's an error\.",
-    r"There was an error\.",
-    r"Please try again later\.",
-    r"<html",
-    r"<!DOCTYPE",
-]
-_ERROR_RE = re.compile("|".join(_ERROR_PATTERNS), re.IGNORECASE)
-
-# Keep chunks well under 4500 to reduce rate-limit risk on large texts
-_CHUNK_SIZE = 2000
-
-
-def _is_error_response(text: str) -> bool:
-    return bool(_ERROR_RE.search(text or ""))
+_CHUNK_SIZE = 2500
 
 
 def _chunk_text(text: str, size: int = _CHUNK_SIZE) -> list[str]:
@@ -43,13 +30,59 @@ def _chunk_text(text: str, size: int = _CHUNK_SIZE) -> list[str]:
     return chunks
 
 
-class DeepTranslationProvider(TranslationProvider):
-    _MAX_RETRIES = 4
-    # Base delay between retries — grows with each attempt
-    _BASE_RETRY_DELAY = 3
-    # Polite delay between successful chunk requests to avoid rate-limiting
-    _INTER_CHUNK_DELAY = 1.5
+def _translate_google_api(text: str, src: str, tgt: str) -> str:
+    """
+    Translate text using Google's translate_a/single endpoint.
+    Fast, reliable, and avoids the 429 rate-limit blocks on translate.google.com/m.
+    """
+    url = "https://translate.googleapis.com/translate_a/single"
+    params = {
+        "client": "gtx",
+        "sl": src,
+        "tl": tgt,
+        "dt": "t",
+        "q": text,
+    }
+    data = urllib.parse.urlencode(params).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Accept": "*/*",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=20) as response:
+        result = json.loads(response.read().decode("utf-8"))
+        if result and result[0]:
+            return "".join(part[0] for part in result[0] if part and part[0])
+    return ""
 
+
+def _translate_chunk_with_fallback(chunk: str, src: str, tgt: str) -> str:
+    """Translate a single chunk using primary Google client API, with deep_translator fallback."""
+    # 1. Primary: Direct Google Client API
+    try:
+        translated = _translate_google_api(chunk, src, tgt)
+        if translated:
+            return translated
+    except Exception as e:
+        logger.warning(f"Google APIs client translation failed: {e}")
+
+    # 2. Secondary fallback: deep_translator GoogleTranslator
+    try:
+        translator = GoogleTranslator(source=src, target=tgt)
+        translated = translator.translate(chunk)
+        if translated:
+            return translated
+    except Exception as e:
+        logger.warning(f"deep_translator GoogleTranslator failed: {e}")
+
+    # 3. If all translation attempts fail, raise so calling service handles it properly
+    raise RuntimeError(f"Translation failed for target language '{tgt}'")
+
+
+class DeepTranslationProvider(TranslationProvider):
     def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         if not text or not text.strip():
             return ""
@@ -57,61 +90,19 @@ class DeepTranslationProvider(TranslationProvider):
         src = source_lang if source_lang and source_lang != "auto" else "auto"
         tgt = target_lang
 
-        chunks = _chunk_text(text.strip())
-        logger.info(
-            f"DeepTranslationProvider: {len(chunks)} chunks, "
-            f"{len(text)} chars, {src} → {tgt}"
-        )
+        if src == tgt and src != "auto":
+            return text
+
+        logger.info(f"Translating text ({src} -> {tgt}, {len(text)} chars)")
+        chunks = _chunk_text(text, size=_CHUNK_SIZE)
         translated_chunks = []
 
-        for i, chunk in enumerate(chunks):
-            if not chunk.strip():
+        for chunk in chunks:
+            if chunk.strip():
+                translated = _translate_chunk_with_fallback(chunk, src, tgt)
+                translated_chunks.append(translated)
+            else:
                 translated_chunks.append(chunk)
-                continue
-            result = self._translate_chunk_with_retry(chunk, src, tgt, i)
-            translated_chunks.append(result)
-            # Polite delay between chunks to avoid rate limiting
-            if i < len(chunks) - 1:
-                time.sleep(self._INTER_CHUNK_DELAY)
 
-        return " ".join(translated_chunks)
+        return "".join(translated_chunks)
 
-    def _translate_chunk_with_retry(
-        self, chunk: str, src: str, tgt: str, chunk_index: int = 0
-    ) -> str:
-        last_error = None
-
-        for attempt in range(1, self._MAX_RETRIES + 1):
-            try:
-                logger.info(
-                    f"Googletrans: chunk {chunk_index} attempt {attempt} "
-                    f"({len(chunk)} chars, {src} → {tgt})"
-                )
-                # deep_translator uses "auto" for auto-detect
-                g_src = src if src != "auto" else "auto"
-                result = GoogleTranslator(source=g_src, target=tgt).translate(chunk)
-                
-                if not result:
-                    raise ValueError("Translator returned empty result")
-
-                if _is_error_response(result):
-                    raise ValueError(
-                        f"Translator returned error page: {result[:120]}"
-                    )
-
-                return result
-
-            except Exception as e:
-                last_error = e
-                wait = self._BASE_RETRY_DELAY * attempt
-                logger.warning(
-                    f"DeepTranslator chunk {chunk_index} attempt {attempt} "
-                    f"failed: {e} — waiting {wait}s before retry"
-                )
-                if attempt < self._MAX_RETRIES:
-                    time.sleep(wait)
-
-        raise RuntimeError(
-            f"Translation failed after {self._MAX_RETRIES} attempts "
-            f"for chunk {chunk_index}: {last_error}"
-        )
