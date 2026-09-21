@@ -18,12 +18,18 @@ _FONT_DIR = os.path.abspath(
 FONT_CANDIDATES = [
     # Bundled Noto fonts (downloaded during setup)
     os.path.join(_FONT_DIR, "NotoSansGujarati-Regular.ttf"),
+    os.path.join(_FONT_DIR, "NotoSansDevanagari-Regular.ttf"),
     os.path.join(_FONT_DIR, "NotoSans-Regular.ttf"),
-    # Windows system fonts with broad Unicode coverage
+    # Windows system fonts with broad Unicode and Indic coverage
+    "C:/Windows/Fonts/Nirmala.ttc",
+    "C:/Windows/Fonts/mangal.ttf",
+    "C:/Windows/Fonts/aparaj.ttf",
     "C:/Windows/Fonts/seguisym.ttf",
     "C:/Windows/Fonts/arial.ttf",
     "C:/Windows/Fonts/calibri.ttf",
     # Linux / Docker paths
+    "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+    "/usr/share/fonts/truetype/noto/NotoSansGujarati-Regular.ttf",
     "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
     "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -79,23 +85,34 @@ class ImageProcessor:
     def _get_font(size: int, text: str = ""):
         from PIL import ImageFont
         
+        indic_font_path = None
         gujarati_font_path = None
         regular_font_path = None
         
         for path in FONT_CANDIDATES:
             if os.path.exists(path):
-                if "Gujarati" in path:
-                    gujarati_font_path = path
-                elif "NotoSans-Regular" in path or "arial" in path.lower():
-                    regular_font_path = path
+                lower_p = path.lower()
+                if "nirmala" in lower_p or "mangal" in lower_p or "devanagari" in lower_p:
+                    if not indic_font_path:
+                        indic_font_path = path
+                elif "gujarati" in lower_p:
+                    if not gujarati_font_path:
+                        gujarati_font_path = path
+                elif "notosans-regular" in lower_p or "arial" in lower_p or "calibri" in lower_p:
+                    if not regular_font_path:
+                        regular_font_path = path
 
-        # Check if text contains Gujarati characters
+        # Check script types
+        has_indic = any(0x0900 <= ord(c) <= 0x0D7F for c in text) if text else False
         has_gujarati = any(0x0A80 <= ord(c) <= 0x0AFF for c in text) if text else False
         
-        target_path = gujarati_font_path if has_gujarati and gujarati_font_path else regular_font_path
-        
-        if not target_path:
-            # Fallback to whatever exists
+        if has_gujarati and gujarati_font_path:
+            target_path = gujarati_font_path
+        elif has_indic and indic_font_path:
+            target_path = indic_font_path
+        elif regular_font_path:
+            target_path = regular_font_path
+        else:
             target_path = next((p for p in FONT_CANDIDATES if os.path.exists(p)), None)
 
         if target_path:

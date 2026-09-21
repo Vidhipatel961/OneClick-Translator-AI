@@ -13,9 +13,14 @@ import asyncio
 
 class TextToSpeechService:
     def __init__(self, provider: TextToSpeechProvider = None):
+        has_real_key = False
+        api_key = settings.ELEVENLABS_API_KEY or settings.TTS_PROVIDER_KEY
+        if api_key and not str(api_key).strip().startswith("your_") and len(str(api_key).strip()) > 10:
+            has_real_key = True
+
         if provider:
             self.provider = provider
-        elif settings.TTS_PROVIDER_KEY:
+        elif has_real_key:
             self.provider = ElevenLabsProvider()
         else:
             self.provider = GTTSProvider()
@@ -25,12 +30,16 @@ class TextToSpeechService:
     async def synthesize_speech(self, text: str, language: str, voice: str, db: Session, user_id: uuid.UUID, reference_audio_path: str = None) -> TTSResponse:
         try:
             # 1. Synthesize audio bytes
+            audio_bytes = None
             try:
                 audio_bytes = await self.provider.synthesize(text, language, voice, reference_audio_path=reference_audio_path)
             except Exception as provider_err:
                 logger.warning(f"Primary TTS provider failed: {provider_err}. Falling back to GTTSProvider.")
                 fallback_provider = GTTSProvider()
                 audio_bytes = await fallback_provider.synthesize(text, language, voice)
+
+            if not audio_bytes:
+                raise BaseLingoraException("Failed to generate speech audio bytes.", status_code=500)
             
             # 2. Save file via FileStorageService
             file_stream = io.BytesIO(audio_bytes)

@@ -5,7 +5,8 @@ import 'plyr/dist/plyr.css';
 import { 
   ArrowLeft, UploadCloud, FileText, Video, Mic, Image as ImageIcon, 
   File, Settings, ArrowRightLeft, Loader2, CheckCircle2, Download, 
-  RotateCcw, AlertTriangle, Play, Sparkles, ChevronUp, ChevronDown, Book, Folder, Copy, Presentation
+  RotateCcw, AlertTriangle, Play, Sparkles, ChevronUp, ChevronDown, Book, Folder, Copy, Presentation,
+  Columns2, Eye
 } from 'lucide-react';
 import { apiUrl } from '../lib/api';
 import { projectsApi, type Project } from '../api/projects';
@@ -131,6 +132,7 @@ export default function Translator() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageBlobUrl, setImageBlobUrl] = useState<string | null>(null);
+  const [resultTab, setResultTab] = useState<'visual' | 'text' | 'compare'>('visual');
   
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [chatMessages, setChatMessages] = useState<{role: string, content: string}[]>([]);
@@ -264,16 +266,17 @@ export default function Translator() {
           setWorkflowStage('COMPLETED');
           setProgress(100);
           
-          if (data.original_transcript) setSttResult(data.original_transcript);
-          if (data.result_text) setMockResult(data.result_text);
-          if (data.result_audio_url) setTtsAudioUrl(apiUrl(data.result_audio_url));
-          if (data.result_video_url) setTranslatedVideoUrl(apiUrl(data.result_video_url));
-          if (data.result_pdf_url) setTranslatedPdfUrl(apiUrl(data.result_pdf_url));
-          if (data.result_document_url) setTranslatedDocumentUrl(apiUrl(data.result_document_url));
-          if (data.result_image_url) setTranslatedImageUrl(apiUrl(data.result_image_url));
-          if (data.subtitles_srt_url) setSubtitlesSrtUrl(apiUrl(data.subtitles_srt_url));
-          if (data.subtitles_vtt_url) setSubtitlesVttUrl(apiUrl(data.subtitles_vtt_url));
-          if (data.translation_source) setTranslationSource(data.translation_source);
+          setSttResult(data.original_transcript || '');
+          setMockResult(data.result_text || '');
+          setTtsAudioUrl(data.result_audio_url ? apiUrl(data.result_audio_url) : null);
+          setTranslatedVideoUrl(data.result_video_url ? apiUrl(data.result_video_url) : null);
+          setTranslatedPdfUrl(data.result_pdf_url ? apiUrl(data.result_pdf_url) : null);
+          setTranslatedDocumentUrl(data.result_document_url ? apiUrl(data.result_document_url) : null);
+          setTranslatedImageUrl(data.result_image_url ? apiUrl(data.result_image_url) : null);
+          setSubtitlesSrtUrl(data.subtitles_srt_url ? apiUrl(data.subtitles_srt_url) : null);
+          setSubtitlesVttUrl(data.subtitles_vtt_url ? apiUrl(data.subtitles_vtt_url) : null);
+          setTranslationSource(data.translation_source || null);
+          setResultTab(data.result_image_url || data.result_pdf_url ? 'visual' : 'text');
         } else if (data.status === 'FAILED') {
           setAppState('ERROR');
         } else {
@@ -351,6 +354,9 @@ export default function Translator() {
     setVttBlobUrl(null);
     setTranslatedPdfUrl(null);
     setTranslatedDocumentUrl(null);
+    setTranslatedImageUrl(null);
+    setImageBlobUrl(null);
+    setResultTab('visual');
     setPdfUrl(null);
     setImageUrl(null);
     setSubtitlesSrtUrl(null);
@@ -481,20 +487,21 @@ export default function Translator() {
              
              if (statusData.status === 'COMPLETED') {
                 clearInterval(pollInterval);
-                setSttResult(statusData.original_transcript || '');
-                setMockResult(statusData.result_text || '');
-                if (statusData.result_audio_url) setTtsAudioUrl(apiUrl(statusData.result_audio_url));
-                if (statusData.result_video_url) setTranslatedVideoUrl(apiUrl(statusData.result_video_url));
-                if (statusData.result_pdf_url) setTranslatedPdfUrl(apiUrl(statusData.result_pdf_url));
-                if (statusData.result_document_url) setTranslatedDocumentUrl(apiUrl(statusData.result_document_url));
-                if (statusData.result_image_url) setTranslatedImageUrl(apiUrl(statusData.result_image_url));
-                if (statusData.subtitles_srt_url) setSubtitlesSrtUrl(apiUrl(statusData.subtitles_srt_url));
-                if (statusData.subtitles_vtt_url) setSubtitlesVttUrl(apiUrl(statusData.subtitles_vtt_url));
-                if (statusData.translation_source) setTranslationSource(statusData.translation_source);
-                
-                setWorkflowStage('COMPLETED');
-                setProgress(100);
-                setAppState('SUCCESS');
+                 setSttResult(statusData.original_transcript || '');
+                 setMockResult(statusData.result_text || '');
+                 setTtsAudioUrl(statusData.result_audio_url ? apiUrl(statusData.result_audio_url) : null);
+                 setTranslatedVideoUrl(statusData.result_video_url ? apiUrl(statusData.result_video_url) : null);
+                 setTranslatedPdfUrl(statusData.result_pdf_url ? apiUrl(statusData.result_pdf_url) : null);
+                 setTranslatedDocumentUrl(statusData.result_document_url ? apiUrl(statusData.result_document_url) : null);
+                 setTranslatedImageUrl(statusData.result_image_url ? apiUrl(statusData.result_image_url) : null);
+                 setSubtitlesSrtUrl(statusData.subtitles_srt_url ? apiUrl(statusData.subtitles_srt_url) : null);
+                 setSubtitlesVttUrl(statusData.subtitles_vtt_url ? apiUrl(statusData.subtitles_vtt_url) : null);
+                 setTranslationSource(statusData.translation_source || null);
+                 setResultTab(statusData.result_image_url || statusData.result_pdf_url ? 'visual' : 'text');
+                 
+                 setWorkflowStage('COMPLETED');
+                 setProgress(100);
+                 setAppState('SUCCESS');
              } else if (statusData.status === 'FAILED') {
                 clearInterval(pollInterval);
                 setAppState('ERROR');
@@ -611,6 +618,9 @@ export default function Translator() {
     setVttBlobUrl(null);
     setTranslatedPdfUrl(null);
     setTranslatedDocumentUrl(null);
+    setTranslatedImageUrl(null);
+    setImageBlobUrl(null);
+    setResultTab('visual');
     setPdfUrl(null);
     setImageUrl(null);
     setSubtitlesSrtUrl(null);
@@ -776,7 +786,7 @@ export default function Translator() {
             </div>
 
             {/* Upload Area OR File Preview */}
-            <div className="flex-1 h-full min-h-[400px] max-h-[600px] bg-surface border border-border rounded-2xl flex flex-col overflow-hidden relative group transition-all">
+            <div className="flex-1 min-h-[420px] lg:min-h-[540px] bg-surface border border-border rounded-2xl flex flex-col overflow-hidden relative group transition-all">
               
               {appState === 'EMPTY' && (
                 <div 
@@ -878,7 +888,7 @@ export default function Translator() {
             </h3>
 
             {/* Translate Action Area OR Result */}
-            <div className={`flex-1 h-full min-h-[400px] max-h-[600px] rounded-2xl flex flex-col overflow-hidden relative transition-all ${
+            <div className={`flex-1 min-h-[420px] lg:min-h-[540px] rounded-2xl flex flex-col overflow-hidden relative transition-all ${
               appState === 'SUCCESS' ? 'bg-surface border border-border' : 'bg-surface border border-border border-dashed'
             }`}>
               
@@ -1013,18 +1023,90 @@ export default function Translator() {
 
               {appState === 'SUCCESS' && (
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                  <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
-                    <div className="flex items-center gap-2 text-primary font-medium">
-                      <CheckCircle2 className="w-5 h-5" />
-                      Success
+                  {/* Result Header: Success Status, Segmented Tabs, and Action Controls */}
+                  <div className="p-3 sm:p-4 border-b border-border bg-surface flex flex-wrap items-center justify-between gap-3 shrink-0">
+                    <div className="flex items-center gap-2 text-primary font-medium text-sm sm:text-base">
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
+                      <span>Success</span>
                     </div>
-                    <div className="flex gap-2">
-                       <button onClick={handleReset} className="text-text-muted hover:text-text-main transition p-2 bg-surface-hover rounded-lg hover:bg-surface-hover" title="Start Over">
+
+                    {/* Segmented View Tabs for Image & Document Types */}
+                    {selectedType === 'image' && (
+                      <div className="flex items-center bg-background/80 p-1 rounded-xl border border-border text-xs">
+                        <button
+                          onClick={() => setResultTab('visual')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+                            resultTab === 'visual'
+                              ? 'bg-primary text-[#04110F] shadow-sm font-semibold'
+                              : 'text-text-muted hover:text-text-main'
+                          }`}
+                        >
+                          <ImageIcon className="w-3.5 h-3.5" />
+                          <span>Translated Image</span>
+                        </button>
+                        <button
+                          onClick={() => setResultTab('text')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+                            resultTab === 'text'
+                              ? 'bg-primary text-[#04110F] shadow-sm font-semibold'
+                              : 'text-text-muted hover:text-text-main'
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Text Result</span>
+                        </button>
+                        {imageUrl && (
+                          <button
+                            onClick={() => setResultTab('compare')}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+                              resultTab === 'compare'
+                                ? 'bg-primary text-[#04110F] shadow-sm font-semibold'
+                                : 'text-text-muted hover:text-text-main'
+                            }`}
+                          >
+                            <Columns2 className="w-3.5 h-3.5" />
+                            <span>Side-by-Side</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {['pdf', 'docx', 'pptx'].includes(selectedType) && (
+                      <div className="flex items-center bg-background/80 p-1 rounded-xl border border-border text-xs">
+                        <button
+                          onClick={() => setResultTab('visual')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+                            resultTab === 'visual'
+                              ? 'bg-primary text-[#04110F] shadow-sm font-semibold'
+                              : 'text-text-muted hover:text-text-main'
+                          }`}
+                        >
+                          <File className="w-3.5 h-3.5" />
+                          <span>Document</span>
+                        </button>
+                        <button
+                          onClick={() => setResultTab('text')}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition ${
+                            resultTab === 'text'
+                              ? 'bg-primary text-[#04110F] shadow-sm font-semibold'
+                              : 'text-text-muted hover:text-text-main'
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Text</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Action Controls */}
+                    <div className="flex items-center gap-2">
+                       <button onClick={handleReset} className="text-text-muted hover:text-text-main transition p-2 bg-surface-hover rounded-lg" title="Start Over">
                          <RotateCcw className="w-4 h-4" />
                        </button>
                        <button 
                          onClick={() => {
-                           if (ttsAudioUrl) downloadAuthFile(ttsAudioUrl, `translated_audio_${targetLang}.mp3`);
+                           if (selectedType === 'image' && translatedImageUrl) downloadAuthFile(translatedImageUrl, `translated_${file?.name || 'image.png'}`);
+                           else if (ttsAudioUrl && selectedType === 'audio') downloadAuthFile(ttsAudioUrl, `translated_audio_${targetLang}.mp3`);
                            else if (translatedVideoUrl) downloadAuthFile(translatedVideoUrl, `translated_video_${targetLang}.mp4`);
                            else if (translatedPdfUrl) downloadAuthFile(translatedPdfUrl, `translated_${targetLang}.pdf`);
                            else if (translatedDocumentUrl) downloadAuthFile(translatedDocumentUrl, `translated_${targetLang}`);
@@ -1036,335 +1118,344 @@ export default function Translator() {
                              a.href = url; a.download = `translation_${targetLang}.txt`; a.click();
                            }
                          }}
-                         className="flex items-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition px-4 py-2 rounded-lg font-medium shadow-lg shadow-primary/20"
+                         className="flex items-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition px-3 sm:px-4 py-2 rounded-lg font-medium shadow-lg shadow-primary/20 text-xs sm:text-sm"
                        >
                          <Download className="w-4 h-4" /> Download
                        </button>
                     </div>
                   </div>
-                  {['pdf', 'docx', 'pptx', 'image'].includes(selectedType) && (
-                     <div className="p-4 bg-surface border-b border-border hidden sm:block">
-                       <div className="flex items-center justify-between mb-2">
-                         <h4 className="text-xs font-semibold text-text-disabled uppercase">{selectedType === 'image' ? 'Original Detected Text' : ['pdf', 'docx', 'pptx'].includes(selectedType) ? 'Original Document Content' : 'Original Transcript'} ({sourceLangObj?.name})</h4>
-                         <div className="flex gap-3">
-                           <button 
-                             onClick={() => {
-                               navigator.clipboard.writeText(sttResult);
-                             }}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Copy className="w-3 h-3" /> Copy
-                           </button>
-                           <button 
-                             onClick={() => {
-                               const blob = new Blob([sttResult], { type: 'text/plain' });
-                               const url = URL.createObjectURL(blob);
-                               const a = document.createElement('a');
-                               a.href = url;
-                               a.download = `original_content_${sourceLangObj?.code}.txt`;
-                               a.click();
-                             }}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Download className="w-3 h-3" /> TXT
-                           </button>
-                           <button 
-                             onClick={() => downloadAsWord(sttResult, `original_content_${sourceLangObj?.code}.doc`)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <FileText className="w-3 h-3" /> DOC
-                           </button>
-                           <button 
-                             onClick={() => printAsPdf(sttResult)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <File className="w-3 h-3" /> PDF
-                           </button>
-                           <button 
-                             onClick={() => downloadAsPptx(sttResult, `original_content_${sourceLangObj?.code}.pptx`)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Presentation className="w-3 h-3" /> PPTX
-                           </button>
-                         </div>
-                       </div>
-                       <div className={`font-mono text-sm text-text-main overflow-y-auto show-scrollbar ${['pdf', 'docx', 'pptx', 'image'].includes(selectedType) ? 'max-h-64' : ''}`} dir={sourceLangObj?.direction || 'ltr'}>
-                         {sttResult || (selectedType === 'image' ? <span className="text-text-disabled italic">No text detected in image</span> : null)}
-                       </div>
-                    </div>
-                  )}
-                  <div 
-                    className={`flex-1 p-6 font-mono text-text-main whitespace-pre-wrap overflow-y-auto show-scrollbar ${selectedType === 'video' ? 'hidden sm:block' : ''}`}
-                    dir={targetLangObj?.direction || 'ltr'}
-                  >
-                    {['audio', 'video', 'pdf', 'docx', 'pptx', 'image'].includes(selectedType) ? (
-                       <div className="flex items-center justify-between mb-4" dir="ltr">
-                        <div className="flex items-center gap-3">
-                          <h4 className="text-xs font-semibold text-text-disabled uppercase text-left">{selectedType === 'image' ? 'Translated Text' : ['pdf', 'docx', 'pptx'].includes(selectedType) ? 'Translated Document Content' : 'Translation'} ({targetLangObj?.name})</h4>
-                          {translationSource && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${translationSource.includes('Memory') ? 'border-primary-dark/50 text-primary bg-primary/30' : 'border-border text-text-muted bg-surface-hover'}`}>
-                              {translationSource}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-3">
-                           <button 
-                             onClick={() => {
-                               navigator.clipboard.writeText(mockResult);
-                             }}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Copy className="w-3 h-3" /> Copy
-                           </button>
-                           <button 
-                             onClick={() => {
-                               const blob = new Blob([mockResult], { type: 'text/plain' });
-                               const url = URL.createObjectURL(blob);
-                               const a = document.createElement('a');
-                               a.href = url;
-                               a.download = `translated_transcript_${targetLangObj?.code}.txt`;
-                               a.click();
-                             }}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Download className="w-3 h-3" /> TXT
-                           </button>
-                           <button 
-                             onClick={() => downloadAsWord(mockResult, `translated_transcript_${targetLangObj?.code}.doc`)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <FileText className="w-3 h-3" /> DOC
-                           </button>
-                           <button 
-                             onClick={() => printAsPdf(mockResult)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <File className="w-3 h-3" /> PDF
-                           </button>
-                           <button 
-                             onClick={() => downloadAsPptx(mockResult, `translated_transcript_${targetLangObj?.code}.pptx`)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Presentation className="w-3 h-3" /> PPTX
-                           </button>
-                         </div>
-                       </div>
-                    ) : (
-                      <div className="flex items-center justify-between mb-4" dir="ltr">
-                        <div className="flex items-center gap-3">
-                          <h4 className="text-xs font-semibold text-text-disabled uppercase text-left">Translation ({targetLangObj?.name})</h4>
-                          {translationSource && (
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${translationSource.includes('Memory') ? 'border-primary-dark/50 text-primary bg-primary/30' : 'border-border text-text-muted bg-surface-hover'}`}>
-                              {translationSource}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex gap-3 flex-wrap justify-end">
-                           <button 
-                             onClick={() => navigator.clipboard.writeText(mockResult)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Copy className="w-3 h-3" /> Copy
-                           </button>
-                           <button 
-                             onClick={() => {
-                               const blob = new Blob([mockResult], { type: 'text/plain' });
-                               const url = URL.createObjectURL(blob);
-                               const a = document.createElement('a');
-                               a.href = url;
-                               a.download = `translated_text_${targetLangObj?.code}.txt`;
-                               a.click();
-                             }}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Download className="w-3 h-3" /> TXT
-                           </button>
-                           <button 
-                             onClick={() => downloadAsWord(mockResult, `translated_text_${targetLangObj?.code}.doc`)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <FileText className="w-3 h-3" /> DOC
-                           </button>
-                           <button 
-                             onClick={() => printAsPdf(mockResult)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <File className="w-3 h-3" /> PDF
-                           </button>
-                           <button 
-                             onClick={() => downloadAsPptx(mockResult, `translated_text_${targetLangObj?.code}.pptx`)}
-                             className="text-xs text-primary hover:text-primary flex items-center gap-1"
-                           >
-                             <Presentation className="w-3 h-3" /> PPTX
-                           </button>
-                         </div>
-                      </div>
-                    )}
-                    {mockResult || (selectedType === 'image' ? <span className="text-text-disabled italic">No text detected in image</span> : null)}
-                  </div>
-                  
-                  {mockResult && (
-                    <div className="bg-surface border-t border-border p-4">
-                       {!ttsAudioUrl ? (
-                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                           <div className="flex gap-2 w-full sm:w-auto">
-                             <select 
-                               value={ttsVoice} 
-                               onChange={(e) => setTtsVoice(e.target.value)}
-                               className="bg-primary/5 border border-primary/20 text-text-main rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-                             >
-                               <option className="bg-surface text-text-main" value="default">Default Voice</option>
-                               <option className="bg-surface text-text-main" value="male">Male Voice</option>
-                               <option className="bg-surface text-text-main" value="female">Female Voice</option>
-                             </select>
-                           </div>
-                           <button 
-                             onClick={handleGenerateAudio} 
-                             disabled={isGeneratingTTS}
-                             className="flex items-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition px-6 py-2 rounded-lg font-medium w-full sm:w-auto justify-center disabled:opacity-50"
-                           >
-                             {isGeneratingTTS ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
-                             {isGeneratingTTS ? 'Generating...' : 'Listen'}
-                           </button>
-                         </div>
-                       ) : (
-                         <div className="flex flex-col gap-3">
-                           <div className="flex items-center justify-between text-sm text-text-muted">
-                             <span>Generated Audio</span>
-                             <select 
-                               value={ttsSpeed} 
-                               onChange={(e) => {
-                                 setTtsSpeed(Number(e.target.value));
-                                 const audioEl = document.getElementById('tts-audio') as HTMLAudioElement;
-                                 if (audioEl) audioEl.playbackRate = Number(e.target.value);
-                               }}
-                               className="bg-surface-hover border border-border rounded-md px-2 py-1 focus:outline-none text-text-main"
-                             >
-                               <option className="bg-surface text-text-main" value={0.75}>0.75x</option>
-                               <option className="bg-surface text-text-main" value={1}>1x Normal</option>
-                               <option className="bg-surface text-text-main" value={1.5}>1.5x</option>
-                               <option className="bg-surface text-text-main" value={2}>2x</option>
-                             </select>
-                           </div>
-                           {audioBlobUrl && (
-                             <video 
-                               id="tts-audio" 
-                               controls 
-                               src={audioBlobUrl} 
-                               crossOrigin="anonymous" 
-                               className="w-full h-24 bg-black rounded-xl shadow-lg" 
-                               autoPlay
-                               controlsList="nodownload"
-                             >
-                               {vttBlobUrl && <track src={vttBlobUrl} kind="subtitles" srcLang={targetLang} label={targetLangObj?.name || 'Subtitles'} default />}
-                             </video>
-                           )}
-                           <div className="flex gap-2">
-                             <button
-                               onClick={() => {
-                                 if (!audioBlobUrl) return;
-                                 const a = document.createElement('a');
-                                 a.href = audioBlobUrl;
-                                 a.download = 'translated_audio.mp3';
-                                 a.click();
-                               }}
-                               disabled={!audioBlobUrl}
-                               className="flex-1 flex items-center justify-center gap-2 text-text-main bg-surface-hover hover:bg-surface-hover transition py-2 rounded-lg font-medium text-sm disabled:opacity-50"
-                             >
-                               <Download className="w-4 h-4" /> Download Audio
-                             </button>
-                           </div>
-                         </div>
-                       )}
-                    </div>
-                  )}
-                  
-                  {selectedType === 'video' && translatedVideoUrl && (
-                    <div className="bg-surface border-t border-border p-4">
-                      <div className="flex items-center justify-between text-sm text-text-muted mb-2">
-                        <span>Final Translated Video</span>
-                      </div>
-                      {videoBlobUrl && (
-                        <video 
-                          controls 
-                          className="w-full aspect-video bg-black rounded-xl shadow-lg" 
-                          crossOrigin="anonymous" 
-                          src={videoBlobUrl}
-                          controlsList="nodownload"
-                        >
-                          {vttBlobUrl && <track src={vttBlobUrl} kind="subtitles" srcLang={targetLang} label={targetLangObj?.name || 'Subtitles'} default />}
-                        </video>
-                      )}
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => downloadAuthFile(translatedVideoUrl!, `translated_${file?.name || 'video.mp4'}`)}
-                          className="flex-1 flex items-center justify-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition py-2 rounded-lg font-medium text-sm shadow-lg shadow-primary/20"
-                        >
-                          <Download className="w-4 h-4" /> Download Video
-                        </button>
-                        {subtitlesSrtUrl && (
-                          <button
-                            onClick={() => downloadAuthFile(subtitlesSrtUrl!, `subtitles_${targetLang}.srt`)}
-                            className="flex items-center justify-center gap-2 text-text-main bg-surface-hover hover:bg-surface-hover transition py-2 px-4 rounded-lg font-medium text-sm border border-border"
-                          >
-                            SRT
-                          </button>
-                        )}
-                        {subtitlesVttUrl && (
-                          <button
-                            onClick={() => downloadAuthFile(subtitlesVttUrl!, `subtitles_${targetLang}.vtt`)}
-                            className="flex items-center justify-center gap-2 text-text-main bg-surface-hover hover:bg-surface-hover transition py-2 px-4 rounded-lg font-medium text-sm border border-border"
-                          >
-                            VTT
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {['pdf', 'docx', 'pptx', 'image'].includes(selectedType) && (translatedPdfUrl || translatedDocumentUrl || translatedImageUrl) && (
-                    <div className="bg-surface border-t border-border p-4">
-                      <div className="flex items-center justify-between text-sm text-text-muted mb-2">
-                        <span>Final Translated Document</span>
-                      </div>
-                      {translatedPdfUrl && (
-                        <div className="w-full aspect-[1/1.4] bg-surface-hover rounded-lg overflow-hidden border border-border relative">
-                          <iframe src={`${translatedPdfUrl}#toolbar=0`} className="w-full h-full absolute inset-0" />
-                        </div>
-                      )}
-                      {selectedType === 'image' && translatedImageUrl && (
-                        <div className="w-full flex flex-col md:flex-row gap-4 items-center justify-center bg-background p-4 rounded-xl border border-border">
-                          {imageUrl && (
-                            <div className="flex-1 flex flex-col items-center gap-2">
-                              <span className="text-xs text-text-disabled uppercase">Original</span>
-                              <img src={imageUrl} className="max-h-64 object-contain rounded-lg border border-border bg-black/50" alt="Original" />
+
+                  {/* Scrollable Result Body */}
+                  <div className="flex-1 overflow-y-auto show-scrollbar p-4 sm:p-5 space-y-4">
+
+                    {/* ── IMAGE TRANSLATION VIEWS ── */}
+                    {selectedType === 'image' && (
+                      <>
+                        {/* Tab 1: Translated Image Preview */}
+                        {resultTab === 'visual' && (
+                          <div className="space-y-4">
+                            <div className="relative w-full min-h-[260px] max-h-[420px] flex items-center justify-center bg-black/40 rounded-xl border border-border p-3 overflow-hidden">
+                              {imageBlobUrl ? (
+                                <img 
+                                  src={imageBlobUrl} 
+                                  alt="Translated Result" 
+                                  className="max-h-[380px] w-auto max-w-full object-contain rounded shadow-lg" 
+                                />
+                              ) : (
+                                <div className="h-48 flex flex-col items-center justify-center text-text-disabled gap-2">
+                                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                  <span className="text-xs">Loading translated image...</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          <div className="flex-1 flex flex-col items-center gap-2">
-                            <span className="text-xs text-text-disabled uppercase">Translated</span>
-                            {imageBlobUrl ? (
-                              <img src={imageBlobUrl} className="max-h-64 object-contain rounded-lg border border-border bg-black/50" alt="Translated" />
-                            ) : (
-                              <div className="h-64 w-full flex items-center justify-center text-text-disabled">
-                                <Loader2 className="w-6 h-6 animate-spin" />
+
+                            {/* Action Bar below Image */}
+                            <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-background/50 rounded-xl border border-border text-xs">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {translationSource && (
+                                  <span className={`text-[10px] px-2.5 py-1 rounded-full border shrink-0 ${translationSource.includes('Memory') ? 'border-primary-dark/50 text-primary bg-primary/20' : 'border-border text-text-muted bg-surface-hover'}`}>
+                                    {translationSource}
+                                  </span>
+                                )}
+                                <span className="text-text-muted">Target: <strong className="text-text-main">{targetLangObj?.name || targetLang}</strong></span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {imageBlobUrl && (
+                                  <a 
+                                    href={imageBlobUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-hover hover:bg-surface-hover text-text-main transition"
+                                    title="Open full size image in new tab"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" /> Full Size
+                                  </a>
+                                )}
+                                {translatedImageUrl && (
+                                  <button
+                                    onClick={() => downloadAuthFile(translatedImageUrl, `translated_${file?.name || 'image.png'}`)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-[#04110F] font-medium transition shadow-sm"
+                                  >
+                                    <Download className="w-3.5 h-3.5" /> Download Image
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Translated Text Preview Card under Image */}
+                            {mockResult && (
+                              <div className="bg-background/60 rounded-xl border border-border p-4 space-y-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <span className="text-xs font-semibold text-text-disabled uppercase">Extracted & Translated Text</span>
+                                  <button 
+                                    onClick={() => navigator.clipboard.writeText(mockResult)}
+                                    className="text-xs text-primary hover:text-primary flex items-center gap-1 font-medium"
+                                  >
+                                    <Copy className="w-3 h-3" /> Copy Text
+                                  </button>
+                                </div>
+                                <div className="font-mono text-xs sm:text-sm text-text-main whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto show-scrollbar select-text bg-surface/50 p-3 rounded-lg border border-border/50" dir={targetLangObj?.direction || 'ltr'}>
+                                  {mockResult}
+                                </div>
                               </div>
                             )}
                           </div>
+                        )}
+
+                        {/* Tab 2: Side-by-Side Comparison */}
+                        {resultTab === 'compare' && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                            <div className="flex flex-col items-center gap-2 bg-background/60 p-3 rounded-xl border border-border">
+                              <span className="text-xs font-semibold text-text-disabled uppercase">Original ({sourceLangObj?.name || 'Source'})</span>
+                              {imageUrl ? (
+                                <img src={imageUrl} alt="Original" className="max-h-[340px] w-auto max-w-full object-contain rounded bg-black/40 border border-border/40" />
+                              ) : (
+                                <div className="h-48 flex items-center justify-center text-text-disabled text-xs">No preview available</div>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-center gap-2 bg-background/60 p-3 rounded-xl border border-border">
+                              <span className="text-xs font-semibold text-primary uppercase">Translated ({targetLangObj?.name || 'Target'})</span>
+                              {imageBlobUrl ? (
+                                <img src={imageBlobUrl} alt="Translated" className="max-h-[340px] w-auto max-w-full object-contain rounded bg-black/40 border border-border/40" />
+                              ) : (
+                                <div className="h-48 flex items-center justify-center text-text-disabled text-xs"><Loader2 className="w-5 h-5 animate-spin" /></div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* ── DOCUMENT PREVIEWS (PDF / DOCX / PPTX) ── */}
+                    {['pdf', 'docx', 'pptx'].includes(selectedType) && resultTab === 'visual' && (
+                      <div className="space-y-4">
+                        {translatedPdfUrl && (
+                          <div className="w-full aspect-[1/1.3] max-h-[500px] bg-surface-hover rounded-xl overflow-hidden border border-border relative">
+                            <iframe src={`${translatedPdfUrl}#toolbar=0`} className="w-full h-full absolute inset-0" />
+                          </div>
+                        )}
+                        {(translatedDocumentUrl || translatedPdfUrl) && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => {
+                                const url = translatedPdfUrl || translatedDocumentUrl;
+                                if (url) downloadAuthFile(url, `translated_${file?.name || 'document'}`);
+                              }}
+                              className="flex-1 flex items-center justify-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition py-2.5 rounded-lg font-medium text-sm shadow-lg shadow-primary/20"
+                            >
+                              <Download className="w-4 h-4" /> Download Translated Document
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── TEXT CONTENT TAB OR STANDARD TEXT VIEW ── */}
+                    {(resultTab === 'text' || (!['image', 'pdf', 'docx', 'pptx'].includes(selectedType))) && (
+                      <div className="space-y-4">
+                        {/* Translated Text Block */}
+                        <div className="bg-background/80 rounded-xl border border-border p-4 space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2" dir="ltr">
+                            <div className="flex flex-wrap items-center gap-2 min-w-0">
+                              <h4 className="text-xs font-semibold text-text-disabled uppercase">
+                                {selectedType === 'image' ? 'Translated Text' : ['pdf', 'docx', 'pptx'].includes(selectedType) ? 'Translated Document Content' : 'Translated Result'} ({targetLangObj?.name})
+                              </h4>
+                              {translationSource && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full border shrink-0 ${translationSource.includes('Memory') ? 'border-primary-dark/50 text-primary bg-primary/20' : 'border-border text-text-muted bg-surface-hover'}`}>
+                                  {translationSource}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                              <button onClick={() => navigator.clipboard.writeText(mockResult)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                <Copy className="w-3 h-3" /> Copy
+                              </button>
+                              <button onClick={() => { const blob = new Blob([mockResult], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `translated_${targetLangObj?.code}.txt`; a.click(); }} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                <Download className="w-3 h-3" /> TXT
+                              </button>
+                              <button onClick={() => downloadAsWord(mockResult, `translated_${targetLangObj?.code}.doc`)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                <FileText className="w-3 h-3" /> DOC
+                              </button>
+                              <button onClick={() => printAsPdf(mockResult)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                <File className="w-3 h-3" /> PDF
+                              </button>
+                              <button onClick={() => downloadAsPptx(mockResult, `translated_${targetLangObj?.code}.pptx`)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                <Presentation className="w-3 h-3" /> PPTX
+                              </button>
+                            </div>
+                          </div>
+                          <div className="font-mono text-sm text-text-main whitespace-pre-wrap leading-relaxed select-text min-h-[100px]" dir={targetLangObj?.direction || 'ltr'}>
+                            {mockResult || (selectedType === 'image' ? <span className="text-text-disabled italic">No text detected</span> : null)}
+                          </div>
                         </div>
-                      )}
-                      <div className="flex gap-2 mt-4">
-                        <button
-                          onClick={() => {
-                            const url = translatedPdfUrl || translatedDocumentUrl || translatedImageUrl;
-                            if (url) downloadAuthFile(url, `translated_${file?.name || 'document'}`);
-                          }}
-                          className="flex-1 flex items-center justify-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition py-2 rounded-lg font-medium text-sm shadow-lg shadow-primary/20"
+
+                        {/* Original Text / Transcript Block */}
+                        {sttResult && (
+                          <div className="bg-background/40 rounded-xl border border-border p-4 space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2" dir="ltr">
+                              <h4 className="text-xs font-semibold text-text-disabled uppercase">
+                                {selectedType === 'image' ? 'Original Detected Text' : ['pdf', 'docx', 'pptx'].includes(selectedType) ? 'Original Document Content' : 'Original Transcript'} ({sourceLangObj?.name})
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                                <button onClick={() => navigator.clipboard.writeText(sttResult)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                  <Copy className="w-3 h-3" /> Copy
+                                </button>
+                                <button onClick={() => { const blob = new Blob([sttResult], { type: 'text/plain' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `original_${sourceLangObj?.code}.txt`; a.click(); }} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                  <Download className="w-3 h-3" /> TXT
+                                </button>
+                                <button onClick={() => downloadAsWord(sttResult, `original_${sourceLangObj?.code}.doc`)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                  <FileText className="w-3 h-3" /> DOC
+                                </button>
+                                <button onClick={() => printAsPdf(sttResult)} className="px-2.5 py-1 text-xs bg-surface-hover hover:bg-surface-hover hover:text-primary rounded-md border border-border text-text-main flex items-center gap-1 transition">
+                                  <File className="w-3 h-3" /> PDF
+                                </button>
+                              </div>
+                            </div>
+                            <div className="font-mono text-sm text-text-muted whitespace-pre-wrap leading-relaxed select-text max-h-48 overflow-y-auto show-scrollbar" dir={sourceLangObj?.direction || 'ltr'}>
+                              {sttResult}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ── VIDEO TRANSLATION PLAYER ── */}
+                    {selectedType === 'video' && translatedVideoUrl && (
+                      <div className="bg-background/80 rounded-xl border border-border p-4 space-y-3">
+                        <div className="flex items-center justify-between text-xs font-semibold text-text-disabled uppercase">
+                          <span>Translated Video</span>
+                        </div>
+                        {videoBlobUrl && (
+                          <video 
+                            controls 
+                            className="w-full aspect-video bg-black rounded-xl shadow-lg" 
+                            crossOrigin="anonymous" 
+                            src={videoBlobUrl}
+                            controlsList="nodownload"
+                          >
+                            {vttBlobUrl && <track src={vttBlobUrl} kind="subtitles" srcLang={targetLang} label={targetLangObj?.name || 'Subtitles'} default />}
+                          </video>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => downloadAuthFile(translatedVideoUrl!, `translated_${file?.name || 'video.mp4'}`)}
+                            className="flex-1 flex items-center justify-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition py-2 rounded-lg font-medium text-xs sm:text-sm shadow-lg shadow-primary/20"
+                          >
+                            <Download className="w-4 h-4" /> Download Video
+                          </button>
+                          {subtitlesSrtUrl && (
+                            <button
+                              onClick={() => downloadAuthFile(subtitlesSrtUrl!, `subtitles_${targetLang}.srt`)}
+                              className="flex items-center justify-center gap-1.5 text-text-main bg-surface-hover hover:bg-surface-hover transition py-2 px-3 rounded-lg font-medium text-xs border border-border"
+                            >
+                              SRT
+                            </button>
+                          )}
+                          {subtitlesVttUrl && (
+                            <button
+                              onClick={() => downloadAuthFile(subtitlesVttUrl!, `subtitles_${targetLang}.vtt`)}
+                              className="flex items-center justify-center gap-1.5 text-text-main bg-surface-hover hover:bg-surface-hover transition py-2 px-3 rounded-lg font-medium text-xs border border-border"
+                            >
+                              VTT
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ── AUDIO TRANSLATION & TTS SECTION ── */}
+                    {mockResult && (selectedType === 'audio' || ttsAudioUrl) && (
+                      <div className="bg-background/80 rounded-xl border border-border p-4 space-y-3">
+                        {!ttsAudioUrl ? (
+                          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <select 
+                                value={ttsVoice} 
+                                onChange={(e) => setTtsVoice(e.target.value)}
+                                className="bg-primary/5 border border-primary/20 text-text-main rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                              >
+                                <option className="bg-surface text-text-main" value="default">Default Voice</option>
+                                <option className="bg-surface text-text-main" value="male">Male Voice</option>
+                                <option className="bg-surface text-text-main" value="female">Female Voice</option>
+                              </select>
+                            </div>
+                            <button 
+                              onClick={handleGenerateAudio} 
+                              disabled={isGeneratingTTS}
+                              className="flex items-center gap-2 text-[#04110F] bg-primary hover:bg-primary-dark transition px-5 py-2 rounded-lg font-medium text-xs sm:text-sm w-full sm:w-auto justify-center disabled:opacity-50"
+                            >
+                              {isGeneratingTTS ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mic className="w-4 h-4" />}
+                              {isGeneratingTTS ? 'Generating...' : 'Listen'}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between text-xs text-text-muted">
+                              <span className="font-semibold uppercase flex items-center gap-1.5 text-text-disabled">
+                                <Mic className="w-3.5 h-3.5 text-primary" /> Generated Audio
+                              </span>
+                              <select 
+                                value={ttsSpeed} 
+                                onChange={(e) => {
+                                  setTtsSpeed(Number(e.target.value));
+                                  const audioEl = document.getElementById('tts-audio') as HTMLAudioElement;
+                                  if (audioEl) audioEl.playbackRate = Number(e.target.value);
+                                }}
+                                className="bg-surface-hover border border-border rounded-md px-2 py-0.5 text-xs text-text-main focus:outline-none"
+                              >
+                                <option className="bg-surface text-text-main" value={0.75}>0.75x</option>
+                                <option className="bg-surface text-text-main" value={1}>1x Normal</option>
+                                <option className="bg-surface text-text-main" value={1.5}>1.5x</option>
+                                <option className="bg-surface text-text-main" value={2}>2x</option>
+                              </select>
+                            </div>
+                            {audioBlobUrl && (
+                              <audio 
+                                id="tts-audio" 
+                                controls 
+                                src={audioBlobUrl} 
+                                className="w-full h-10 rounded-lg" 
+                                autoPlay
+                              />
+                            )}
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  if (!audioBlobUrl) return;
+                                  const a = document.createElement('a');
+                                  a.href = audioBlobUrl;
+                                  a.download = `translated_audio_${targetLang}.mp3`;
+                                  a.click();
+                                }}
+                                disabled={!audioBlobUrl}
+                                className="flex-1 flex items-center justify-center gap-2 text-text-main bg-surface-hover hover:bg-surface-hover transition py-2 rounded-lg font-medium text-xs disabled:opacity-50 border border-border"
+                              >
+                                <Download className="w-3.5 h-3.5" /> Download Audio
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Optional Listen Button for Text/Image when no audio is loaded yet */}
+                    {mockResult && !ttsAudioUrl && selectedType !== 'audio' && (
+                      <div className="flex items-center justify-between p-3 bg-background/40 rounded-xl border border-border/60 text-xs">
+                        <span className="text-text-muted flex items-center gap-1.5">
+                          <Mic className="w-3.5 h-3.5 text-primary" /> Want to hear the translation spoken?
+                        </span>
+                        <button 
+                          onClick={handleGenerateAudio}
+                          disabled={isGeneratingTTS}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-hover hover:bg-surface-hover hover:text-primary transition font-medium text-text-main disabled:opacity-50"
                         >
-                          <Download className="w-4 h-4" /> Download Translated File
+                          {isGeneratingTTS ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+                          {isGeneratingTTS ? 'Synthesizing...' : 'Listen'}
                         </button>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                  </div>
                 </div>
               )}
 
