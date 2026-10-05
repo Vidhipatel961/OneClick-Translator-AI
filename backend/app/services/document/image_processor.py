@@ -48,8 +48,24 @@ class ImageProcessor(DocumentProcessor):
             if hasattr(self, 'last_regions') and self.last_regions:
                 # 1. Mask original text
                 cleaned_img = VisualImageProcessor.remove_text_from_image(img, self.last_regions, padding=2)
+                
+                # Merge word-level regions into a single paragraph block for drawing 
+                # if we have 1 big translated text chunk
+                if len(translated_texts) == 1 and len(self.last_regions) > 1:
+                    from app.services.providers.ocr_base import OCRRegion
+                    min_x = min(r.left for r in self.last_regions)
+                    min_y = min(r.top for r in self.last_regions)
+                    max_x = max(r.left + r.width for r in self.last_regions)
+                    max_y = max(r.top + r.height for r in self.last_regions)
+                    draw_regions = [OCRRegion(
+                        text="", left=min_x, top=min_y,
+                        width=max_x - min_x, height=max_y - min_y, confidence=1.0
+                    )]
+                else:
+                    draw_regions = self.last_regions
+                    
                 # 2. Draw translated text
-                final_img = VisualImageProcessor.draw_translated_text(cleaned_img, self.last_regions, translated_texts)
+                final_img = VisualImageProcessor.draw_translated_text(cleaned_img, draw_regions, translated_texts)
                 final_img.save(output_path, "PNG")
             else:
                 img.save(output_path, "PNG")

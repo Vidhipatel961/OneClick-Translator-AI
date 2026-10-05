@@ -1,5 +1,6 @@
 from app.services.providers.base import TranslationProvider
 from app.services.providers.google_provider import DeepTranslationProvider
+from app.services.providers.openai_provider import OpenAITranslationProvider
 from app.core.exceptions import BaseLingoraException
 from app.core.logging import logger
 from app.models.domain import TranslationMemory
@@ -7,12 +8,19 @@ from app.services.memory_service import save_translation_memory_direct
 from sqlalchemy.orm import Session
 import asyncio
 import uuid
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 class TranslationService:
     def __init__(self, provider: TranslationProvider = None):
-        # Defaulting to DeepTranslationProvider for free tier testing
-        # Can easily swap to OpenAIProvider or AWSTranslateProvider in the future
-        self.provider = provider or DeepTranslationProvider()
+        if provider:
+            self.provider = provider
+        else:
+            if os.getenv("OPENAI_API_KEY"):
+                self.provider = OpenAITranslationProvider()
+            else:
+                self.provider = DeepTranslationProvider()
     async def translate_text(self, text: str, source_lang: str, target_lang: str, glossary_id: str = None, user_id: uuid.UUID = None, db: Session = None) -> tuple[str, str]:
         if not text.strip():
             return text, "AI Translated"

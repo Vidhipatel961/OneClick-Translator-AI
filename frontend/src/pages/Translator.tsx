@@ -776,7 +776,7 @@ export default function Translator() {
             </div>
 
             {/* Upload Area OR File Preview */}
-            <div className="flex-1 h-full min-h-[400px] max-h-[600px] bg-surface border border-border rounded-2xl flex flex-col overflow-hidden relative group transition-all">
+            <div className="flex-1 h-full min-h-[400px] max-h-[900px] bg-surface border border-border rounded-2xl flex flex-col overflow-hidden relative group transition-all">
               
               {appState === 'EMPTY' && (
                 <div 
@@ -878,7 +878,7 @@ export default function Translator() {
             </h3>
 
             {/* Translate Action Area OR Result */}
-            <div className={`flex-1 h-full min-h-[400px] max-h-[600px] rounded-2xl flex flex-col overflow-hidden relative transition-all ${
+            <div className={`flex-1 h-full min-h-[400px] max-h-[900px] rounded-2xl flex flex-col overflow-hidden relative transition-all ${
               appState === 'SUCCESS' ? 'bg-surface border border-border' : 'bg-surface border border-border border-dashed'
             }`}>
               
@@ -1012,7 +1012,7 @@ export default function Translator() {
               )}
 
               {appState === 'SUCCESS' && (
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                <div className="flex-1 flex flex-col min-h-0 overflow-y-auto show-scrollbar">
                   <div className="flex items-center justify-between p-4 border-b border-border bg-surface">
                     <div className="flex items-center gap-2 text-primary font-medium">
                       <CheckCircle2 className="w-5 h-5" />
@@ -1088,13 +1088,13 @@ export default function Translator() {
                            </button>
                          </div>
                        </div>
-                       <div className={`font-mono text-sm text-text-main overflow-y-auto show-scrollbar ${['pdf', 'docx', 'pptx', 'image'].includes(selectedType) ? 'max-h-64' : ''}`} dir={sourceLangObj?.direction || 'ltr'}>
+                       <div className={`font-mono text-sm text-text-main overflow-y-auto show-scrollbar ${['pdf', 'docx', 'pptx', 'image'].includes(selectedType) ? 'max-h-24' : ''}`} dir={sourceLangObj?.direction || 'ltr'}>
                          {sttResult || (selectedType === 'image' ? <span className="text-text-disabled italic">No text detected in image</span> : null)}
                        </div>
                     </div>
                   )}
                   <div 
-                    className={`flex-1 p-6 font-mono text-text-main whitespace-pre-wrap overflow-y-auto show-scrollbar ${selectedType === 'video' ? 'hidden sm:block' : ''}`}
+                    className={`p-6 font-mono text-text-main whitespace-pre-wrap min-h-[250px] flex-shrink-0 ${selectedType === 'video' ? 'hidden sm:block' : ''}`}
                     dir={targetLangObj?.direction || 'ltr'}
                   >
                     {['audio', 'video', 'pdf', 'docx', 'pptx', 'image'].includes(selectedType) ? (
@@ -1337,13 +1337,13 @@ export default function Translator() {
                           {imageUrl && (
                             <div className="flex-1 flex flex-col items-center gap-2">
                               <span className="text-xs text-text-disabled uppercase">Original</span>
-                              <img src={imageUrl} className="max-h-64 object-contain rounded-lg border border-border bg-black/50" alt="Original" />
+                              <img src={imageUrl} className="max-h-24 object-contain rounded-lg border border-border bg-black/50" alt="Original" />
                             </div>
                           )}
                           <div className="flex-1 flex flex-col items-center gap-2">
                             <span className="text-xs text-text-disabled uppercase">Translated</span>
                             {imageBlobUrl ? (
-                              <img src={imageBlobUrl} className="max-h-64 object-contain rounded-lg border border-border bg-black/50" alt="Translated" />
+                              <img src={imageBlobUrl} className="max-h-24 object-contain rounded-lg border border-border bg-black/50" alt="Translated" />
                             ) : (
                               <div className="h-64 w-full flex items-center justify-center text-text-disabled">
                                 <Loader2 className="w-6 h-6 animate-spin" />
