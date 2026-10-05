@@ -25,13 +25,18 @@ class ImageProcessor(DocumentProcessor):
             img = Image.open(file_path)
             self.last_image_path = file_path
             result = self.ocr_provider.extract_text(img, lang=lang)
-            self.last_regions = result.regions
+            # Ensure 1-to-1 mapping with regions for visual inpainting
+            valid_regions = [r for r in (result.regions or []) if r.text and r.text.strip()]
+            self.last_regions = valid_regions
             
             # Handle no-text-detected state
-            if not result.full_text.strip():
+            if not valid_regions and not result.full_text.strip():
                 return []
                 
-            # Split by lines
+            if valid_regions:
+                return [r.text.strip() for r in valid_regions]
+                
+            # Split by lines fallback
             chunks = [c.strip() for c in result.full_text.split("\n") if c.strip()]
             return chunks
         except Exception as e:

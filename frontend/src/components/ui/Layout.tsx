@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -175,7 +175,7 @@ export default function Layout() {
         </header>
 
         {/* Main scrollable area */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8 bg-background relative z-10">
+        <main className="flex-1 overflow-y-auto show-scrollbar p-4 lg:p-8 bg-background relative z-10">
           <Outlet />
         </main>
       </div>

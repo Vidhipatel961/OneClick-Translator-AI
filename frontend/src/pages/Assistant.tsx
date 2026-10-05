@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, Loader2, Bot, User, Sparkles, FileText, UploadCloud, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-export default function Assistant() {
-
 const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, token: string }) => {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
@@ -42,6 +40,8 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
     </a>
   );
 };
+
+export default function Assistant() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string>('');
   const [messages, setMessages] = useState<any[]>([]);
@@ -52,7 +52,7 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [sourceLang, setSourceLang] = useState('en');
   const [targetLang, setTargetLang] = useState('en');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const printAsPdf = (content: string) => {
     if (!content) return;
@@ -77,8 +77,10 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages, isLoading]);
 
   const fetchJobs = async () => {
     const token = localStorage.getItem('token');
@@ -232,29 +234,26 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
   const suggestedActions = ['Summarize', 'Key Points', 'Explain', 'Extract Actions', 'Generate FAQ'];
 
   return (
-    <div className="h-full bg-background text-text-main flex flex-col font-sans">
-      {/* Header */}
-      <header className="bg-surface border-b border-border p-4 flex items-center gap-4 z-10">
-        <Link to="/dashboard" className="p-2 hover:bg-surface-hover rounded-lg transition text-text-muted hover:text-text-main">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
+    <div className="max-w-7xl w-full mx-auto flex flex-col flex-1 pb-4">
+      {/* Page Title */}
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="bg-primary/20 p-2 rounded-lg">
+          <div className="bg-primary/10 border border-primary/20 p-2.5 rounded-xl">
             <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-text-main">AI Assistant</h1>
-            <p className="text-xs text-text-muted">Chat with your translated files</p>
+            <h1 className="text-2xl font-bold tracking-tight text-text-main">AI Assistant</h1>
+            <p className="text-xs sm:text-sm text-text-muted">Chat with your translated files</p>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Main Layout */}
-      <div className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-4 gap-6 min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row gap-6 min-h-[560px] md:h-[calc(100vh-14rem)]">
         
         {/* Sidebar / Context Selector */}
-        <div className="w-full md:w-64 flex flex-col shrink-0 gap-4">
-          <div className="bg-surface border border-border rounded-xl p-4">
+        <div className="w-full md:w-72 flex flex-col shrink-0 gap-4">
+          <div className="bg-surface border border-border rounded-xl p-4 shrink-0 shadow-lg">
             <h2 className="text-sm font-semibold text-text-main mb-3 uppercase tracking-wider flex items-center gap-2">
               <FileText className="w-4 h-4 text-primary" />
               File Context
@@ -262,7 +261,7 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
             <select
               value={selectedJobId}
               onChange={handleJobChange}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:border-primary placeholder-text-muted placeholder-text-muted"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-text-main focus:outline-none focus:border-primary placeholder-text-muted"
             >
               <option value="">General Chat (No File)</option>
               {jobs.map(job => (
@@ -276,9 +275,9 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
             </p>
           </div>
 
-          <div className="bg-surface border border-border rounded-xl p-4 flex-1 hidden md:flex flex-col">
-            <h2 className="text-sm font-semibold text-text-main mb-3 uppercase tracking-wider">Suggested Actions</h2>
-            <div className="flex flex-col gap-2">
+          <div className="bg-surface border border-border rounded-xl p-4 flex-1 hidden md:flex flex-col shadow-lg overflow-hidden min-h-0">
+            <h2 className="text-sm font-semibold text-text-main mb-3 uppercase tracking-wider shrink-0">Suggested Actions</h2>
+            <div className="flex flex-col gap-2 overflow-y-auto show-scrollbar pr-1">
               {suggestedActions.map((action, i) => (
                 <button
                   key={i}
@@ -293,12 +292,12 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 bg-surface border border-border rounded-xl flex flex-col overflow-hidden relative">
+        <div className="flex-1 bg-surface border border-border rounded-xl flex flex-col overflow-hidden relative shadow-lg min-h-[460px]">
           
           {/* Chat Messages Container */}
-          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+          <div ref={chatContainerRef} className="flex-1 overflow-y-auto show-scrollbar p-4 md:p-6 space-y-6">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
+              <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto py-8">
                 <div className="w-16 h-16 bg-surface-hover rounded-full flex items-center justify-center mb-6 border border-border shadow-xl">
                   <Bot className="w-8 h-8 text-primary" />
                 </div>
@@ -385,14 +384,12 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
                 {error}
               </div>
             )}
-            
-            <div ref={messagesEndRef} />
           </div>
 
           {/* Input Area */}
-          <div className="p-4 bg-surface border-t border-border">
+          <div className="p-4 bg-surface border-t border-border shrink-0">
             <div className="flex items-end gap-2 max-w-4xl mx-auto flex-wrap">
-              <div className="w-full flex items-center gap-4 mb-2">
+              <div className="w-full flex items-center gap-4 mb-2 flex-wrap sm:flex-nowrap">
                 <input
                   type="file"
                   id="assistant-file"
@@ -407,7 +404,7 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
                 />
                 <label 
                   htmlFor="assistant-file" 
-                  className="cursor-pointer flex items-center gap-2 text-sm text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/30 transition-colors max-w-xs truncate"
+                  className="cursor-pointer flex items-center gap-2 text-sm text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/30 transition-colors max-w-xs truncate shrink-0"
                   title={attachedFile ? attachedFile.name : 'Attach Media'}
                 >
                   <UploadCloud className="w-4 h-4 shrink-0" />
@@ -439,7 +436,7 @@ const SecureMediaRenderer = ({ url, type, token }: { url: string, type: string, 
                 </select>
               </div>
 
-              <div className="flex-1 bg-background border border-border focus-within:border-primary rounded-xl overflow-hidden transition-colors shadow-inner flex">
+              <div className="flex-1 bg-background border border-border focus-within:border-primary rounded-xl overflow-hidden transition-colors shadow-inner flex min-w-[200px]">
                 <input
                   type="text"
                   value={query}
